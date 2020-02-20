@@ -16,6 +16,7 @@
   * Watchdog
   * Reliable WiFi connection
   * Resource monitoring
+  * Sensor life-cycle management
 * Configuration management
   * Allow to configure sensors dynamically with configuration files, vs. statically by code.
 * Update management

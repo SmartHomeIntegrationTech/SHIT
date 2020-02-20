@@ -1,0 +1,17 @@
+{
+  "name": "SmartHomeIntegrationTech",
+  "description": "The platform independant part of SHIT",
+  "keywords": [
+    "SmartHome"
+  ],
+  "authors": [
+    {
+      "name": "Karsten Becker",
+      "email": "kb@shi.technology",
+      "url": "https://shi.technology",
+      "maintainer": true
+    }
+  ],
+  "version": "0.1.0",
+  "dependencies": {}
+}
