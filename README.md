@@ -11,6 +11,7 @@
   * Filtering
   * Pre-processing
   * Aggregation
+  * Life-cycle management
 * Hardware abstraction
   * Provide an abstraction layer that can be implemented on many different platforms that provide the basic services needed
   * Watchdog
@@ -21,3 +22,6 @@
   * Allow to configure sensors dynamically with configuration files, vs. statically by code.
 * Update management
   * Provide a mean to update the firmware on the fly
+* Monitoring
+  * Collect statistics in order to identify potential problems
+  * Forward local logging data
