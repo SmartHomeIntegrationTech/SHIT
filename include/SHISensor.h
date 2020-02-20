@@ -4,6 +4,7 @@
  * license that can be found in the LICENSE file.
  */
 #pragma once
+#include <stdio.h>
 
 #include <functional>
 #include <memory>
@@ -27,26 +28,26 @@ class MeasurementMetaData;
 class Measurement {
  public:
   Measurement(float value, MeasurementMetaData *metaData)
-      : stringRepresentation(toString(value)),
+      : metaData(metaData),
         floatValue(value),
-        metaData(metaData),
-        state(MeasurementDataState::VALID) {}
+        state(MeasurementDataState::VALID),
+        stringRepresentation(toString(value)) {}
   Measurement(int value, MeasurementMetaData *metaData)
-      : stringRepresentation(toString(value)),
+      : metaData(metaData),
         intValue(value),
-        metaData(metaData),
-        state(MeasurementDataState::VALID) {}
+        state(MeasurementDataState::VALID),
+        stringRepresentation(toString(value)) {}
   Measurement(std::string value, MeasurementMetaData *metaData)
-      : stringRepresentation(value),
-        metaData(metaData),
+      : metaData(metaData),
         intValue(0),
-        state(MeasurementDataState::VALID) {}
+        state(MeasurementDataState::VALID),
+        stringRepresentation(value) {}
   explicit Measurement(MeasurementMetaData *metaData, bool error = false)
-      : stringRepresentation(error ? "<ERROR>" : "<NO_DATA>"),
-        metaData(metaData),
+      : metaData(metaData),
         intValue(0),
         state(error ? MeasurementDataState::ERROR
-                    : MeasurementDataState::NO_DATA) {}
+                    : MeasurementDataState::NO_DATA),
+        stringRepresentation(error ? "<ERROR>" : "<NO_DATA>") {}
   Measurement(const Measurement &copy) = default;
   Measurement(Measurement &&move) = default;
   std::string toTransmitString() const { return stringRepresentation; }
