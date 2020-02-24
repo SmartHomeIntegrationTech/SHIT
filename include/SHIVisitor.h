@@ -8,16 +8,19 @@
 namespace SHI {
 
 class Sensor;
-class Channel;
+class SensorGroup;
 class Hardware;
 class Communicator;
 class MeasurementMetaData;
 
 class Visitor {
  public:
-  virtual void visit(SHI::Sensor *sensor) {}
-  virtual void visit(SHI::Channel *channel) {}
-  virtual void visit(SHI::Hardware *harwdware) {}
+  virtual void enterVisit(SHI::Sensor *sensor) {}
+  virtual void leaveVisit(SHI::Sensor *sensor) {}
+  virtual void enterVisit(SHI::SensorGroup *channel) {}
+  virtual void leaveVisit(SHI::SensorGroup *channel) {}
+  virtual void enterVisit(SHI::Hardware *harwdware) {}
+  virtual void leaveVisit(SHI::Hardware *harwdware) {}
   virtual void visit(SHI::Communicator *communicator) {}
   virtual void visit(SHI::MeasurementMetaData *data) {}
 };

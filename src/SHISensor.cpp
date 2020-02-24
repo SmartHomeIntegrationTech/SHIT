@@ -14,19 +14,15 @@ const char* STATUS_OK = "OK";
 
 }  // namespace SHI
 
-void SHI::Channel::accept(SHI::Visitor& visitor) {
-  visitor.visit(this);
-  sensor->accept(visitor);
+void SHI::SensorGroup::accept(SHI::Visitor& visitor) {
+  visitor.enterVisit(this);
+  for (auto&& sensor : sensors) {
+    sensor->accept(visitor);
+  }
+  visitor.leaveVisit(this);
 }
 
-std::vector<SHI::MeasurementBundle> SHI::Channel::readSensor() {
-  return sensor->readSensor();
+void SHI::SensorGroup::addSensor(std::shared_ptr<SHI::Sensor> sensor) {
+  sensor->setParent(this);
+  sensors.push_back(sensor);
 }
-bool SHI::Channel::setupSensor() { return sensor->setupSensor(); }
-bool SHI::Channel::stopSensor() { return sensor->stopSensor(); }
-
-const char* SHI::Channel::getStatusMessage() const {
-  return sensor->getStatusMessage();
-}
-bool SHI::Channel::errorIsFatal() const { return sensor->errorIsFatal(); }
-const char* SHI::Channel::getName() const { return internalName.c_str(); }

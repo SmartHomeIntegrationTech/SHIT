@@ -37,10 +37,12 @@ class Measurement {
         intValue(value),
         state(MeasurementDataState::VALID),
         stringRepresentation(toString(value)) {}
-  Measurement(std::string value, MeasurementMetaData *metaData)
+  Measurement(std::string value, MeasurementMetaData *metaData,
+              bool error = false)
       : metaData(metaData),
         intValue(0),
-        state(MeasurementDataState::VALID),
+        state(error ? MeasurementDataState::ERROR
+                    : MeasurementDataState::VALID),
         stringRepresentation(value) {}
   explicit Measurement(MeasurementMetaData *metaData, bool error = false)
       : metaData(metaData),
@@ -117,23 +119,15 @@ class Sensor : public SHI::SHIObject {
   bool fatalError = false;
 };
 
-class Channel : public SHI::Sensor {
+class SensorGroup : public SHI::SHIObject {
  public:
-  Channel(std::shared_ptr<Sensor> sensor, const char *name)
-      : Sensor(name), sensor(sensor) {
-    internalName = std::string(name) + sensor->getName();
-  }
-  std::vector<MeasurementBundle> readSensor() override;
-  bool setupSensor() override;
-  bool stopSensor() override;
+  explicit SensorGroup(const char *name) : SHIObject(name) {}
   void accept(SHI::Visitor &visitor) override;
-  const char *getStatusMessage() const override;
-  bool errorIsFatal() const override;
-  const char *getName() const override;
-  const std::shared_ptr<Sensor> sensor;
+  void addSensor(std::shared_ptr<SHI::Sensor> sensor);
+  std::vector<std::shared_ptr<SHI::Sensor>> *getSensors() { return &sensors; }
 
  private:
-  std::string internalName;
+  std::vector<std::shared_ptr<SHI::Sensor>> sensors;
 };
 
 }  // namespace SHI

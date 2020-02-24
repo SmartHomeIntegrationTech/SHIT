@@ -21,6 +21,8 @@ class Communicator : public SHI::SHIObject {
                          bool isFatal) {}
   virtual void newHardwareStatus(const char *message) {}
 
+  void accept(SHI::Visitor &visitor) override;
+
  protected:
   explicit Communicator(const char *name) : SHIObject(name) {}
   bool isConnected = false;
