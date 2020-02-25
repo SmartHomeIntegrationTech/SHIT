@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "SHIHardware.h"
 #include "SHIObject.h"
 
 // SHI stands for SmartHomeIntegration
@@ -43,7 +44,7 @@ class Measurement {
         intValue(0),
         state(error ? MeasurementDataState::ERROR
                     : MeasurementDataState::VALID),
-        stringRepresentation(value) {}
+        stringRepresentation("\"" + value + "\"") {}
   explicit Measurement(MeasurementMetaData *metaData, bool error = false)
       : metaData(metaData),
         intValue(0),
@@ -78,13 +79,13 @@ class Measurement {
   }
 };
 
-class MeasurementMetaData {
+class MeasurementMetaData : public SHI::SHIObject {
  public:
   MeasurementMetaData(const char *name, const char *unit, SensorDataType type)
-      : name(name), unit(unit), type(type) {}
-  const char *name;
+      : SHIObject(name), unit(unit), type(type) {}
   const char *unit;
   SensorDataType type;
+  void accept(SHI::Visitor &visitor) override;
   Measurement measuredFloat(float value) { return Measurement(value, this); }
   Measurement measuredInt(int value) { return Measurement(value, this); }
   Measurement measuredStr(std::string value) {
@@ -97,10 +98,10 @@ class MeasurementMetaData {
 class MeasurementBundle {
  public:
   MeasurementBundle(std::vector<SHI::Measurement> &&data, SHI::SHIObject *src)
-      : timeStamp(0), data(data), src(src) {}
+      : timeStamp(SHI::hw->getEpochInMs()), data(data), src(src) {}
   MeasurementBundle(const MeasurementBundle &readings) = default;
   MeasurementBundle(MeasurementBundle &&readings) = default;
-  uint32_t timeStamp = 0;
+  uint64_t timeStamp = 0;
   std::vector<SHI::Measurement> data = {};
   SHI::SHIObject *src;
 };
@@ -112,11 +113,18 @@ class Sensor : public SHI::SHIObject {
   virtual bool stopSensor() = 0;
   virtual const char *getStatusMessage() const { return statusMessage; }
   virtual bool errorIsFatal() const { return fatalError; }
+  void accept(SHI::Visitor &visitor) override;
+  virtual std::vector<std::shared_ptr<SHI::MeasurementMetaData>>
+      *getMetaData() {
+    return &metaData;
+  }
 
  protected:
   explicit Sensor(const char *name) : SHIObject(name) {}
+  void addMetaData(std::shared_ptr<SHI::MeasurementMetaData> meta);
   const char *statusMessage = SHI::STATUS_OK;
   bool fatalError = false;
+  std::vector<std::shared_ptr<SHI::MeasurementMetaData>> metaData;
 };
 
 class SensorGroup : public SHI::SHIObject {

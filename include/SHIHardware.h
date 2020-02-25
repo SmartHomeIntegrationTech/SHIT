@@ -49,6 +49,8 @@ class Hardware : public SHI::SHIObject {
 
   void accept(SHI::Visitor &visitor) override;
 
+  virtual int64_t getEpochInMs() = 0;
+
  protected:
   std::vector<std::shared_ptr<SHI::SensorGroup>> sensors = {
       std::make_shared<SHI::SensorGroup>("default")};
@@ -59,6 +61,7 @@ class Hardware : public SHI::SHIObject {
 
   void internalLoop();
   void setupSensors();
+  void setupCommunicators(const char *hwStatus);
 };
 
 extern SHI::Hardware *hw;

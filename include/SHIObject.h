@@ -24,8 +24,8 @@ class SHIObject {
     return {};
   }
   virtual void setParent(SHI::SHIObject *newParent) { parent = newParent; }
-  virtual SHI::SHIObject *getParent() { return parent; }
-  std::string getQualifiedName(const char *seperator = ".");
+  virtual SHI::SHIObject *getParent() const { return parent; }
+  std::string getQualifiedName(const char *seperator = ".") const;
 
  protected:
   SHI::SHIObject *parent = nullptr;

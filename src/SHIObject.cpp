@@ -7,7 +7,7 @@
 
 #include <string>
 
-std::string SHI::SHIObject::getQualifiedName(const char *seperator) {
+std::string SHI::SHIObject::getQualifiedName(const char *seperator) const {
   if (parent != nullptr) {
     return std::string(parent->getQualifiedName(seperator)) + seperator +
            getName();

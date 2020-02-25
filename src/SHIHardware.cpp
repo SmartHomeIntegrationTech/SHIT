@@ -25,6 +25,7 @@ void SHI::Hardware::logError(const char *name, const char *func,
 
 void SHI::Hardware::addSensorGroup(
     std::shared_ptr<SHI::SensorGroup> sensorGroup) {
+  sensorGroup->setParent(this);
   sensors.push_back(sensorGroup);
 }
 
@@ -53,6 +54,13 @@ void SHI::Hardware::setupSensors() {
       feedWatchdog();
       SHI_LOGINFO("Setup done of: " + sensorName);
     }
+  }
+}
+
+void SHI::Hardware::setupCommunicators(const char *hwStatus) {
+  for (auto &&comm : communicators) {
+    comm->setupCommunication();
+    comm->newHardwareStatus(hwStatus);
   }
 }
 
