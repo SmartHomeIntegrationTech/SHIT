@@ -40,13 +40,15 @@ void SHI::Hardware::addCommunicator(
 }
 
 void SHI::Hardware::setupSensors() {
+  defaultGroup->setParent(this);
   for (auto &&sensorGroup : sensors) {
     for (auto &&sensor : *sensorGroup->getSensors()) {
       auto sensorName = sensor->getQualifiedName();
       SHI_LOGINFO("Setting up: " + sensorName);
       if (!sensor->setupSensor()) {
-        SHI_LOGINFO("Something went wrong when setting up sensor:" +
-                    sensorName + " " + sensor->getStatusMessage());
+        SHI_LOGINFO(
+            "Something went wrong when setting up sensor:" + sensorName + " " +
+            sensor->getStatus().stringRepresentation);
         while (1) {
           errLeds();
         }
@@ -73,24 +75,26 @@ void SHI::Hardware::internalLoop() {
       auto reading = sensor->readSensor();
       for (auto &&mb : reading) {
         for (auto &&comm : communicators) {
-          comm->newReading(mb, *sensor);
+          comm->newReading(mb);
         }
       }
-      auto status = sensor->getStatusMessage();
-      if (strcmp(status, STATUS_OK) != 0) {
-        auto isFatal = sensor->errorIsFatal();
+      auto status = sensor->getStatus();
+      auto statusMsg = status.stringRepresentation.c_str();
+      if (strcmp(statusMsg, STATUS_OK) != 0) {
+        auto isFatal =
+            status.getDataState() == SHI::MeasurementDataState::ERROR;
         for (auto &&comm : communicators) {
-          comm->newStatus(*sensor, status, isFatal);
+          comm->newStatus(*sensor, statusMsg, isFatal);
         }
         if (isFatal) {
           sensorHasFatalError = true;
           logError(name, __func__,
                    std::string("Sensor ") + sensorName + " reported error " +
-                       status);
+                       statusMsg);
         } else {
           logWarn(name, __func__,
                   std::string("Sensor ") + sensorName + " reported warning " +
-                      status);
+                      statusMsg);
         }
       }
     }

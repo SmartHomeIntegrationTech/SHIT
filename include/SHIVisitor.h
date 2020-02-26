@@ -15,14 +15,14 @@ class MeasurementMetaData;
 
 class Visitor {
  public:
-  virtual void enterVisit(SHI::Sensor *sensor) {}
-  virtual void leaveVisit(SHI::Sensor *sensor) {}
-  virtual void enterVisit(SHI::SensorGroup *channel) {}
-  virtual void leaveVisit(SHI::SensorGroup *channel) {}
-  virtual void enterVisit(SHI::Hardware *harwdware) {}
-  virtual void leaveVisit(SHI::Hardware *harwdware) {}
-  virtual void visit(SHI::Communicator *communicator) {}
-  virtual void visit(SHI::MeasurementMetaData *data) {}
+  virtual void enterVisit(Sensor *sensor) {}
+  virtual void leaveVisit(Sensor *sensor) {}
+  virtual void enterVisit(SensorGroup *channel) {}
+  virtual void leaveVisit(SensorGroup *channel) {}
+  virtual void enterVisit(Hardware *harwdware) {}
+  virtual void leaveVisit(Hardware *harwdware) {}
+  virtual void visit(Communicator *communicator) {}
+  virtual void visit(MeasurementMetaData *data) {}
 };
 
 }  // namespace SHI

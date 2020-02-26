@@ -39,6 +39,12 @@ void SHI::SensorGroup::addSensor(std::shared_ptr<SHI::Sensor> sensor) {
   sensors.push_back(sensor);
 }
 
+std::string SHI::Measurement::toTransmitString() const {
+  if (metaData->type == SensorDataType::STRING)
+    return "\"" + stringRepresentation + "\"";
+  return stringRepresentation;
+}
+
 void SHI::Sensor::addMetaData(std::shared_ptr<SHI::MeasurementMetaData> meta) {
   meta->setParent(this);
   metaData.push_back(meta);

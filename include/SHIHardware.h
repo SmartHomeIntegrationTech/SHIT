@@ -21,7 +21,7 @@ extern const uint8_t MINOR_VERSION;
 extern const uint8_t PATCH_VERSION;
 extern const char *VERSION;
 
-class Hardware : public SHI::SHIObject {
+class Hardware : public SHIObject {
  public:
   virtual void resetWithReason(const char *reason, bool restart) = 0;
   virtual void errLeds(void) = 0;
@@ -35,9 +35,9 @@ class Hardware : public SHI::SHIObject {
   virtual void resetConfig() = 0;
   virtual void printConfig() = 0;
 
-  void addSensorGroup(std::shared_ptr<SHI::SensorGroup> sensor);
-  void addSensor(std::shared_ptr<SHI::Sensor> sensor);
-  void addCommunicator(std::shared_ptr<SHI::Communicator> communicator);
+  void addSensorGroup(std::shared_ptr<SensorGroup> sensor);
+  void addSensor(std::shared_ptr<Sensor> sensor);
+  void addCommunicator(std::shared_ptr<Communicator> communicator);
 
   virtual void setup(const char *defaultName) = 0;
   virtual void loop() = 0;
@@ -47,14 +47,15 @@ class Hardware : public SHI::SHIObject {
   virtual void logError(const char *name, const char *func,
                         std::string message);
 
-  void accept(SHI::Visitor &visitor) override;
+  void accept(Visitor &visitor) override;
 
   virtual int64_t getEpochInMs() = 0;
 
  protected:
-  std::vector<std::shared_ptr<SHI::SensorGroup>> sensors = {
-      std::make_shared<SHI::SensorGroup>("default")};
-  std::vector<std::shared_ptr<SHI::Communicator>> communicators = {};
+  std::shared_ptr<SensorGroup> defaultGroup =
+      std::make_shared<SensorGroup>("default");
+  std::vector<std::shared_ptr<SensorGroup>> sensors = {defaultGroup};
+  std::vector<std::shared_ptr<Communicator>> communicators = {};
 
   explicit Hardware(const char *name) : SHIObject(name) {}
   virtual void log(const char *message) = 0;
@@ -64,6 +65,6 @@ class Hardware : public SHI::SHIObject {
   void setupCommunicators(const char *hwStatus);
 };
 
-extern SHI::Hardware *hw;
+extern Hardware *hw;
 
 }  // namespace SHI

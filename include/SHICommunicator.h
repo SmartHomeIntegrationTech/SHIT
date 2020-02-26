@@ -9,19 +9,18 @@
 
 namespace SHI {
 
-class Communicator : public SHI::SHIObject {
+class Communicator : public SHIObject {
  public:
   virtual void networkConnected() { isConnected = true; }
   virtual void networkDisconnected() { isConnected = false; }
   virtual void setupCommunication() = 0;
   virtual void loopCommunication() = 0;
-  virtual void newReading(const SHI::MeasurementBundle &reading,
-                          const SHI::Sensor &sensor) {}
-  virtual void newStatus(const SHI::Sensor &sensor, const char *message,
+  virtual void newReading(const MeasurementBundle &reading) {}
+  virtual void newStatus(const SHIObject &obj, const char *message,
                          bool isFatal) {}
   virtual void newHardwareStatus(const char *message) {}
 
-  void accept(SHI::Visitor &visitor) override;
+  void accept(Visitor &visitor) override;
 
  protected:
   explicit Communicator(const char *name) : SHIObject(name) {}
