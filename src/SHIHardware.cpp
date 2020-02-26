@@ -59,10 +59,11 @@ void SHI::Hardware::setupSensors() {
   }
 }
 
-void SHI::Hardware::setupCommunicators(const char *hwStatus) {
+void SHI::Hardware::setupCommunicators() {
+  auto status = getStatus();
   for (auto &&comm : communicators) {
     comm->setupCommunication();
-    comm->newHardwareStatus(hwStatus);
+    comm->newStatus(status, this);
   }
 }
 
@@ -84,7 +85,7 @@ void SHI::Hardware::internalLoop() {
         auto isFatal =
             status.getDataState() == SHI::MeasurementDataState::ERROR;
         for (auto &&comm : communicators) {
-          comm->newStatus(*sensor, statusMsg, isFatal);
+          comm->newStatus(status, sensor.get());
         }
         if (isFatal) {
           sensorHasFatalError = true;
@@ -109,6 +110,7 @@ void SHI::Hardware::internalLoop() {
 
 void SHI::Hardware::accept(SHI::Visitor &visitor) {
   visitor.enterVisit(this);
+  status->accept(visitor);
   for (auto &&comm : communicators) {
     comm->accept(visitor);
   }

@@ -16,9 +16,7 @@ class Communicator : public SHIObject {
   virtual void setupCommunication() = 0;
   virtual void loopCommunication() = 0;
   virtual void newReading(const MeasurementBundle &reading) {}
-  virtual void newStatus(const SHIObject &obj, const char *message,
-                         bool isFatal) {}
-  virtual void newHardwareStatus(const char *message) {}
+  virtual void newStatus(const Measurement &status, SHIObject *src) {}
 
   void accept(Visitor &visitor) override;
 

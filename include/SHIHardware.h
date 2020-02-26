@@ -62,7 +62,7 @@ class Hardware : public SHIObject {
 
   void internalLoop();
   void setupSensors();
-  void setupCommunicators(const char *hwStatus);
+  void setupCommunicators();
 };
 
 extern Hardware *hw;

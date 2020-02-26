@@ -5,4 +5,7 @@
  */
 #include "SHICommunicator.h"
 
-void SHI::Communicator::accept(SHI::Visitor &visitor) { visitor.visit(this); }
+void SHI::Communicator::accept(SHI::Visitor &visitor) {
+  visitor.visit(this);
+  status->accept(visitor);
+}

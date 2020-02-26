@@ -83,19 +83,18 @@ class Measurement {
 class MeasurementMetaData : public SHIObject {
  public:
   MeasurementMetaData(const char *name, const char *unit, SensorDataType type)
-      : SHIObject(name), unit(unit), type(type) {}
+      : SHIObject(name, false), unit(unit), type(type) {}
   MeasurementMetaData(const MeasurementMetaData &meta) = default;
   MeasurementMetaData(MeasurementMetaData &&meta) = default;
   const char *unit;
   SensorDataType type;
   void accept(Visitor &visitor) override;
-  Measurement measuredFloat(float value) { return Measurement(value, this); }
-  Measurement measuredInt(int value) { return Measurement(value, this); }
-  Measurement measuredStr(std::string value, bool error = false) {
-    return Measurement(value, this, error);
-  }
-  Measurement measuredNoData() { return Measurement(this, false); }
-  Measurement measuredError() { return Measurement(this, true); }
+
+  Measurement measuredFloat(float value);
+  Measurement measuredInt(int value);
+  Measurement measuredStr(std::string value, bool error = false);
+  Measurement measuredNoData();
+  Measurement measuredError();
 };
 
 class MeasurementBundle {
@@ -115,21 +114,11 @@ class Sensor : public SHIObject {
   virtual bool setupSensor() = 0;
   virtual bool stopSensor() = 0;
   void accept(Visitor &visitor) override;
-  virtual std::vector<std::shared_ptr<MeasurementMetaData>> *getMetaData() {
-    return &metaData;
-  }
-  virtual Measurement getStatus() {
-    return status->measuredStr(statusMessage, fatalError);
-  }
+  virtual std::vector<std::shared_ptr<MeasurementMetaData>> *getMetaData();
 
  protected:
-  explicit Sensor(const char *name) : SHIObject(name) { addMetaData(status); }
+  explicit Sensor(const char *name) : SHIObject(name) {}
   void addMetaData(std::shared_ptr<MeasurementMetaData> meta);
-  const char *statusMessage = STATUS_OK;
-  bool fatalError = false;
-  std::shared_ptr<MeasurementMetaData> status =
-      std::make_shared<MeasurementMetaData>(STATUS_ITEM, "",
-                                            SensorDataType::STRING);
   std::vector<std::shared_ptr<MeasurementMetaData>> metaData;
 };
 
