@@ -101,6 +101,8 @@ class MeasurementBundle {
  public:
   MeasurementBundle(std::initializer_list<Measurement> data, SHIObject *src)
       : timeStamp(hw->getEpochInMs()), data(data), src(src) {}
+  MeasurementBundle(std::vector<Measurement> &data, SHIObject *src)
+      : timeStamp(hw->getEpochInMs()), data(data), src(src) {}
   MeasurementBundle(const MeasurementBundle &readings) = default;
   MeasurementBundle(MeasurementBundle &&readings) = default;
   uint64_t timeStamp = 0;

@@ -10,6 +10,37 @@
 #include "SHICommunicator.h"
 #include "SHISensor.h"
 
+namespace {
+class StatusVisitor : public SHI::Visitor {
+ public:
+  bool hasFatalError = false;
+  void enterVisit(SHI::Sensor *sensor) { publishStatus(sensor); }
+  void enterVisit(SHI::Hardware *hardware) { publishStatus(hardware); }
+  void visit(SHI::Communicator *communicator) { publishStatus(communicator); }
+  void publishStatus(SHI::SHIObject *obj) {
+    auto status = obj->getStatus();
+    if (status.getDataState() != SHI::MeasurementDataState::NO_DATA) {
+      SHI::hw->publishStatus(status, obj);
+      auto statusMsg = status.stringRepresentation;
+      if (statusMsg != SHI::STATUS_OK) {
+        auto isFatal =
+            status.getDataState() == SHI::MeasurementDataState::ERROR;
+        if (isFatal) {
+          hasFatalError = true;
+          SHI::hw->logError("StatusVisitor", __func__,
+                            std::string("Object ") + obj->getName() +
+                                " reported error " + statusMsg);
+        } else {
+          SHI::hw->logWarn("StatusVisitor", __func__,
+                           std::string("Object ") + obj->getName() +
+                               " reported warning " + statusMsg);
+        }
+      }
+    }
+  }
+};
+}  // namespace
+
 void SHI::Hardware::logInfo(const char *name, const char *func,
                             std::string message) {
   log((std::string("INFO: ") + name + "." + func + "() " + message).c_str());
@@ -68,7 +99,7 @@ void SHI::Hardware::setupCommunicators() {
 }
 
 void SHI::Hardware::internalLoop() {
-  bool sensorHasFatalError = false;
+  static int64_t lastStatusTime = 0;
   for (auto &&sensorGroup : sensors) {
     for (auto &&sensor : *sensorGroup->getSensors()) {
       auto sensorName = sensor->getQualifiedName();
@@ -79,32 +110,29 @@ void SHI::Hardware::internalLoop() {
           comm->newReading(mb);
         }
       }
-      auto status = sensor->getStatus();
-      auto statusMsg = status.stringRepresentation.c_str();
-      if (strcmp(statusMsg, STATUS_OK) != 0) {
-        auto isFatal =
-            status.getDataState() == SHI::MeasurementDataState::ERROR;
-        for (auto &&comm : communicators) {
-          comm->newStatus(status, sensor.get());
-        }
-        if (isFatal) {
-          sensorHasFatalError = true;
-          logError(name, __func__,
-                   std::string("Sensor ") + sensorName + " reported error " +
-                       statusMsg);
-        } else {
-          logWarn(name, __func__,
-                  std::string("Sensor ") + sensorName + " reported warning " +
-                      statusMsg);
-        }
-      }
     }
   }
+  bool hasFatalError = false;
+  if (getEpochInMs() - lastStatusTime > 60000) {
+    logInfo(name, __func__, "Updating status of all");
+    lastStatusTime = getEpochInMs();
+    StatusVisitor visitor;
+    SHI::hw->accept(visitor);
+    hasFatalError = visitor.hasFatalError;
+  }
+
   for (auto &&comm : communicators) {
     comm->loopCommunication();
   }
-  while (sensorHasFatalError) {
+  while (hasFatalError) {
     errLeds();
+  }
+}
+
+void SHI::Hardware::publishStatus(const SHI::Measurement &status,
+                                  SHI::SHIObject *src) {
+  for (auto &&comm : communicators) {
+    comm->newStatus(status, src);
   }
 }
 

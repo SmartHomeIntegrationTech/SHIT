@@ -51,6 +51,8 @@ class Hardware : public SHIObject {
 
   virtual int64_t getEpochInMs() = 0;
 
+  void publishStatus(const SHI::Measurement &status, SHI::SHIObject *src);
+
  protected:
   std::shared_ptr<SensorGroup> defaultGroup =
       std::make_shared<SensorGroup>("default");
