@@ -16,7 +16,6 @@ const char* STATUS_OK = "OK";
 
 void SHI::SensorGroup::accept(SHI::Visitor& visitor) {
   visitor.enterVisit(this);
-  status->accept(visitor);
   for (auto&& sensor : sensors) {
     sensor->accept(visitor);
   }

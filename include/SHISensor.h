@@ -124,7 +124,7 @@ class Sensor : public SHIObject {
 
 class SensorGroup : public SHIObject {
  public:
-  explicit SensorGroup(const char *name) : SHIObject(name) {}
+  explicit SensorGroup(const char *name) : SHIObject(name, false) {}
   SensorGroup(const char *name,
               std::initializer_list<std::shared_ptr<Sensor>> sensors)
       : SHIObject(name) {
