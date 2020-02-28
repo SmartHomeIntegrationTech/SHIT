@@ -16,12 +16,13 @@ namespace SHI {
 
 class Measurement;
 class MeasurementMetaData;
-extern const char *STATUS_OK;
+extern const std::string STATUS_OK;
 
 class SHIObject {
  public:
-  explicit SHIObject(const char *name, bool initStatus = true);
-  virtual const char *getName() const { return name; }
+  explicit SHIObject(const std::string &name, bool initStatus = true);
+  virtual ~SHIObject() = default;
+  virtual const std::string getName() const { return name; }
   virtual void accept(Visitor &visitor) = 0;  // NOLINT (a warning about
                                               // the non-const reference)
   virtual std::vector<std::pair<std::string, std::string>> getStatistics() {
@@ -29,13 +30,14 @@ class SHIObject {
   }
   virtual void setParent(SHIObject *newParent) { parent = newParent; }
   virtual SHIObject *getParent() const { return parent; }
-  virtual std::string getQualifiedName(const char *seperator = ".") const;
+  virtual std::string getQualifiedName(
+      const std::string &seperator = ".") const;
   virtual Measurement getStatus();
 
  protected:
   SHIObject *parent = nullptr;
-  const char *name;
-  const char *statusMessage = STATUS_OK;
+  const std::string name;
+  std::string statusMessage = STATUS_OK;
   bool fatalError = false;
   std::shared_ptr<MeasurementMetaData> status;
 };

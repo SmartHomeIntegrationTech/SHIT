@@ -23,15 +23,15 @@ extern const char *VERSION;
 
 class Hardware : public SHIObject {
  public:
-  virtual void resetWithReason(const char *reason, bool restart) = 0;
+  virtual void resetWithReason(const std::string &reason, bool restart) = 0;
   virtual void errLeds(void) = 0;
 
   virtual void setupWatchdog() = 0;
   virtual void feedWatchdog() = 0;
   virtual void disableWatchdog() = 0;
 
-  virtual const char *getNodeName() = 0;
-  virtual const char *getResetReason() = 0;
+  virtual std::string getNodeName() = 0;
+  virtual std::string getResetReason() = 0;
   virtual void resetConfig() = 0;
   virtual void printConfig() = 0;
 
@@ -39,12 +39,14 @@ class Hardware : public SHIObject {
   void addSensor(std::shared_ptr<Sensor> sensor);
   void addCommunicator(std::shared_ptr<Communicator> communicator);
 
-  virtual void setup(const char *defaultName) = 0;
+  virtual void setup(const std::string &defaultName) = 0;
   virtual void loop() = 0;
 
-  virtual void logInfo(const char *name, const char *func, std::string message);
-  virtual void logWarn(const char *name, const char *func, std::string message);
-  virtual void logError(const char *name, const char *func,
+  virtual void logInfo(const std::string &name, const char *func,
+                       std::string message);
+  virtual void logWarn(const std::string &name, const char *func,
+                       std::string message);
+  virtual void logError(const std::string &name, const char *func,
                         std::string message);
 
   void accept(Visitor &visitor) override;
@@ -53,14 +55,15 @@ class Hardware : public SHIObject {
 
   void publishStatus(const SHI::Measurement &status, SHI::SHIObject *src);
 
+  virtual ~Hardware() = default;
+
  protected:
-  std::shared_ptr<SensorGroup> defaultGroup =
-      std::make_shared<SensorGroup>("default");
-  std::vector<std::shared_ptr<SensorGroup>> sensors = {defaultGroup};
+  std::shared_ptr<SensorGroup> defaultGroup;
+  std::vector<std::shared_ptr<SensorGroup>> sensors;
   std::vector<std::shared_ptr<Communicator>> communicators = {};
 
-  explicit Hardware(const char *name) : SHIObject(name) {}
-  virtual void log(const char *message) = 0;
+  explicit Hardware(const std::string &name);
+  virtual void log(const std::string &message) = 0;
 
   void internalLoop();
   void setupSensors();

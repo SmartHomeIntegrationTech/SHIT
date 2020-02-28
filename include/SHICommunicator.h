@@ -4,6 +4,8 @@
  * license that can be found in the LICENSE file.
  */
 #pragma once
+#include <string>
+
 #include "SHIObject.h"
 #include "SHISensor.h"
 
@@ -19,9 +21,10 @@ class Communicator : public SHIObject {
   virtual void newStatus(const Measurement &status, SHIObject *src) {}
 
   void accept(Visitor &visitor) override;
+  virtual ~Communicator() = default;
 
  protected:
-  explicit Communicator(const char *name) : SHIObject(name) {}
+  explicit Communicator(const std::string &name) : SHIObject(name) {}
   bool isConnected = false;
 };
 

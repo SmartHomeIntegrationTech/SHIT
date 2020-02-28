@@ -41,15 +41,20 @@ class StatusVisitor : public SHI::Visitor {
 };
 }  // namespace
 
-void SHI::Hardware::logInfo(const char *name, const char *func,
+SHI::Hardware::Hardware(const std::string &name) : SHIObject(name) {
+  defaultGroup = std::make_shared<SensorGroup>("default");
+  sensors.push_back(defaultGroup);
+}
+
+void SHI::Hardware::logInfo(const std::string &name, const char *func,
                             std::string message) {
   log((std::string("INFO: ") + name + "." + func + "() " + message).c_str());
 }
-void SHI::Hardware::logWarn(const char *name, const char *func,
+void SHI::Hardware::logWarn(const std::string &name, const char *func,
                             std::string message) {
   log((std::string("WARN: ") + name + "." + func + "() " + message).c_str());
 }
-void SHI::Hardware::logError(const char *name, const char *func,
+void SHI::Hardware::logError(const std::string &name, const char *func,
                              std::string message) {
   log((std::string("ERROR: ") + name + "." + func + "() " + message).c_str());
 }

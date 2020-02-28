@@ -17,8 +17,8 @@
 // SHI stands for SmartHomeIntegration
 namespace SHI {
 
-extern const char *STATUS_ITEM;
-extern const char *STATUS_OK;
+extern const std::string STATUS_ITEM;
+extern const std::string STATUS_OK;
 
 enum class SensorDataType { INT, FLOAT, STRING, STATUS };
 
@@ -82,11 +82,12 @@ class Measurement {
 
 class MeasurementMetaData : public SHIObject {
  public:
-  MeasurementMetaData(const char *name, const char *unit, SensorDataType type)
+  MeasurementMetaData(const std::string &name, const std::string &unit,
+                      SensorDataType type)
       : SHIObject(name, false), unit(unit), type(type) {}
   MeasurementMetaData(const MeasurementMetaData &meta) = default;
   MeasurementMetaData(MeasurementMetaData &&meta) = default;
-  const char *unit;
+  const std::string unit;
   SensorDataType type;
   void accept(Visitor &visitor) override;
 
@@ -117,17 +118,18 @@ class Sensor : public SHIObject {
   virtual bool stopSensor() = 0;
   void accept(Visitor &visitor) override;
   virtual std::vector<std::shared_ptr<MeasurementMetaData>> *getMetaData();
+  virtual ~Sensor() = default;
 
  protected:
-  explicit Sensor(const char *name) : SHIObject(name) {}
+  explicit Sensor(const std::string &name) : SHIObject(name) {}
   void addMetaData(std::shared_ptr<MeasurementMetaData> meta);
   std::vector<std::shared_ptr<MeasurementMetaData>> metaData;
 };
 
 class SensorGroup : public SHIObject {
  public:
-  explicit SensorGroup(const char *name) : SHIObject(name, false) {}
-  SensorGroup(const char *name,
+  explicit SensorGroup(const std::string &name) : SHIObject(name, false) {}
+  SensorGroup(const std::string &name,
               std::initializer_list<std::shared_ptr<Sensor>> sensors)
       : SHIObject(name) {
     for (auto &&sensor : sensors) {

@@ -11,7 +11,8 @@
 
 const SHI::Measurement NODATA(nullptr, false);
 
-SHI::SHIObject::SHIObject(const char *name, bool initStatus) : name(name) {
+SHI::SHIObject::SHIObject(const std::string &name, bool initStatus)
+    : name(name) {
   if (initStatus) {
     status = std::make_shared<MeasurementMetaData>(STATUS_ITEM, "",
                                                    SensorDataType::STATUS);
@@ -19,7 +20,8 @@ SHI::SHIObject::SHIObject(const char *name, bool initStatus) : name(name) {
   }
 }
 
-std::string SHI::SHIObject::getQualifiedName(const char *seperator) const {
+std::string SHI::SHIObject::getQualifiedName(
+    const std::string &seperator) const {
   if (parent != nullptr) {
     return std::string(parent->getQualifiedName(seperator)) + seperator +
            getName();

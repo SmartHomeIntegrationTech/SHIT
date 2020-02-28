@@ -9,8 +9,8 @@
 
 namespace SHI {
 
-const char* STATUS_ITEM = "Status";
-const char* STATUS_OK = "OK";
+const std::string STATUS_ITEM = "Status";  // NOLINT
+const std::string STATUS_OK = "OK";        // NOLINT
 
 }  // namespace SHI
 
