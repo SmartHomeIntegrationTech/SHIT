@@ -11,8 +11,9 @@
 #include <string>
 #include <vector>
 
+#include "ArduinoJson.h"
+#include "SHIFactory.h"
 #include "SHIHardware.h"
-#include "SHIObject.h"
 
 // SHI stands for SmartHomeIntegration
 namespace SHI {
@@ -96,6 +97,7 @@ class MeasurementMetaData : public SHIObject {
   Measurement measuredStr(std::string value, bool error = false);
   Measurement measuredNoData();
   Measurement measuredError();
+  Configuration *getConfig() override { return nullptr; }
 };
 
 class MeasurementBundle {
@@ -126,12 +128,25 @@ class Sensor : public SHIObject {
   std::vector<std::shared_ptr<MeasurementMetaData>> metaData;
 };
 
+class Configuration;
+
+class SensorGroupConfiguration : public Configuration {
+ public:
+  explicit SensorGroupConfiguration(const JsonObject &obj);
+  explicit SensorGroupConfiguration(const std::string &name) : name(name) {}
+  std::string toJson();
+  void printJson(std::ostream printer);
+  void fillData(JsonDocument &doc);  // NOLINT
+  std::string name = "default";
+};
+
 class SensorGroup : public SHIObject {
  public:
-  explicit SensorGroup(const std::string &name) : SHIObject(name, false) {}
+  explicit SensorGroup(const std::string &name)
+      : SHIObject(name, false), config(SensorGroupConfiguration(name)) {}
   SensorGroup(const std::string &name,
               std::initializer_list<std::shared_ptr<Sensor>> sensors)
-      : SHIObject(name) {
+      : SHIObject(name), config(SensorGroupConfiguration(name)) {
     for (auto &&sensor : sensors) {
       addSensor(sensor);
     }
@@ -139,6 +154,8 @@ class SensorGroup : public SHIObject {
   void accept(Visitor &visitor) override;
   void addSensor(std::shared_ptr<Sensor> sensor);
   std::vector<std::shared_ptr<Sensor>> *getSensors() { return &sensors; }
+  Configuration *getConfig() { return &config; }
+  SensorGroupConfiguration config;
 
  private:
   std::vector<std::shared_ptr<Sensor>> sensors;

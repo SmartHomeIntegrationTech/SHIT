@@ -17,6 +17,13 @@
 
 namespace SHI {
 
+class Configuration {
+  virtual std::string toJson() = 0;
+  virtual void printJson(std::ostream printer) = 0;
+  virtual void fillData(
+      JsonDocument &doc) = 0;  // NOLINT Yes, non constant reference
+};
+
 typedef std::function<SHI::SHIObject *(const JsonObject &obj)> factoryFunction;
 
 class Factory {
@@ -35,7 +42,7 @@ class Factory {
 
  private:
   Factory() {}
-  Factory(const Factory *copy) = delete;
+  Factory(const Factory &copy) = delete;
   ~Factory() {}
   static Factory *instance;
   std::map<std::string, factoryFunction> factories;

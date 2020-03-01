@@ -43,7 +43,7 @@ SHI::Factory *SHI::Factory::instance = nullptr;
 SHI::Hardware *SHI::Factory::defaultHardwareFactory(SHI::Hardware *hardware,
                                                     const JsonObject &obj) {
   std::cout << __func__ << std::endl;
-  JsonArray sensors = obj["sensors"];
+  JsonArray sensors = obj["$sensors"];
   for (JsonObject sensorObj : sensors) {
     std::cout << __func__ << sensorObj << std::endl;
     for (auto kv : sensorObj) {
@@ -54,7 +54,7 @@ SHI::Hardware *SHI::Factory::defaultHardwareFactory(SHI::Hardware *hardware,
       hardware->addSensor(std::shared_ptr<SHI::Sensor>(rawSensor));
     }
   }
-  JsonArray sensorGroups = obj["groups"];
+  JsonArray sensorGroups = obj["$groups"];
   for (JsonObject sensorGroupObj : sensorGroups) {
     std::cout << __func__ << sensorGroupObj << std::endl;
     for (auto kv : sensorGroupObj) {
@@ -66,7 +66,7 @@ SHI::Hardware *SHI::Factory::defaultHardwareFactory(SHI::Hardware *hardware,
           std::shared_ptr<SHI::SensorGroup>(rawSensorGroup));
     }
   }
-  JsonArray comms = obj["comms"];
+  JsonArray comms = obj["$comms"];
   for (JsonObject commObj : comms) {
     std::cout << __func__ << commObj << std::endl;
     for (auto kv : commObj) {
@@ -89,7 +89,7 @@ SHI::SensorGroup *SHI::Factory::defaultSensorGroupFactory(
   std::string name = obj["name"];
   std::cout << __func__ << name << std::endl;
   auto group = new SHI::SensorGroup(name.c_str());
-  JsonArray sensors = obj["sensors"];
+  JsonArray sensors = obj["$sensors"];
   for (JsonObject sensorObj : sensors) {
     std::cout << __func__ << sensorObj << std::endl;
     for (auto kv : sensorObj) {

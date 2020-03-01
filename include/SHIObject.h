@@ -16,6 +16,8 @@ namespace SHI {
 
 class Measurement;
 class MeasurementMetaData;
+class Configuration;
+
 extern const std::string STATUS_OK;
 
 class SHIObject {
@@ -33,6 +35,7 @@ class SHIObject {
   virtual std::string getQualifiedName(
       const std::string &seperator = ".") const;
   virtual Measurement getStatus();
+  virtual Configuration *getConfig() = 0;
 
  protected:
   SHIObject *parent = nullptr;
