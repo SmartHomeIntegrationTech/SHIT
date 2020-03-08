@@ -21,6 +21,10 @@ class Communicator : public SHIObject {
   virtual void newStatus(const Measurement &status, SHIObject *src) {}
 
   void accept(Visitor &visitor) override;
+  Communicator(const Communicator&) = delete;
+  Communicator(Communicator&&) = delete;
+  Communicator& operator=(const Communicator&) = delete;
+  Communicator& operator=(Communicator&&) = delete;
   virtual ~Communicator() = default;
 
  protected:

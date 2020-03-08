@@ -18,10 +18,12 @@
 namespace SHI {
 
 class Configuration {
-  virtual std::string toJson() = 0;
-  virtual void printJson(std::ostream printer) = 0;
+ public:
+  virtual std::string toJson();
+  virtual void printJson(std::ostream printer);
+  virtual int getExpectedCapacity() = 0;
   virtual void fillData(
-      JsonDocument &doc) = 0;  // NOLINT Yes, non constant reference
+      JsonObject &obj) = 0;  // NOLINT Yes, non constant reference
 };
 
 typedef std::function<SHI::SHIObject *(const JsonObject &obj)> factoryFunction;

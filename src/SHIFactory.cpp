@@ -79,11 +79,13 @@ SHI::Hardware *SHI::Factory::defaultHardwareFactory(SHI::Hardware *hardware,
   }
   return hardware;
 }
+
 SHI::Communicator *SHI::Factory::defaultCommunicatorFactory(
     SHI::Communicator *comm, const JsonObject &obj) {
   std::cout << __func__ << std::endl;
   return comm;
 }
+
 SHI::SensorGroup *SHI::Factory::defaultSensorGroupFactory(
     const JsonObject &obj) {
   std::string name = obj["name"];
@@ -102,8 +104,25 @@ SHI::SensorGroup *SHI::Factory::defaultSensorGroupFactory(
   }
   return group;
 }
+
 SHI::Sensor *SHI::Factory::defaultSensorFactory(SHI::Sensor *sensor,
                                                 const JsonObject &obj) {
   std::cout << __func__ << std::endl;
   return sensor;
+}
+
+std::string SHI::Configuration::toJson() {
+  DynamicJsonDocument doc(getExpectedCapacity());
+  auto root = doc.as<JsonObject>();
+  fillData(root);
+  char output[2000];
+  serializeJson(doc, output, sizeof(output));
+  return std::string(output);
+}
+
+void SHI::Configuration::printJson(std::ostream printer) {
+  DynamicJsonDocument doc(getExpectedCapacity());
+  auto root = doc.as<JsonObject>();
+  fillData(root);
+  serializeJson(doc, printer);
 }

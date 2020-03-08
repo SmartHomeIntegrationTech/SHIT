@@ -23,6 +23,10 @@ extern const std::string STATUS_OK;
 class SHIObject {
  public:
   explicit SHIObject(const std::string &name, bool initStatus = true);
+  SHIObject(const SHIObject&) = delete;
+  SHIObject(SHIObject&&) = delete;
+  SHIObject& operator=(const SHIObject&) = delete;
+  SHIObject& operator=(SHIObject&&) = delete;
   virtual ~SHIObject() = default;
   virtual const std::string getName() const { return name; }
   virtual void accept(Visitor &visitor) = 0;  // NOLINT (a warning about
@@ -39,7 +43,7 @@ class SHIObject {
 
  protected:
   SHIObject *parent = nullptr;
-  const std::string name;
+  std::string name;
   std::string statusMessage = STATUS_OK;
   bool fatalError = false;
   std::shared_ptr<MeasurementMetaData> status;

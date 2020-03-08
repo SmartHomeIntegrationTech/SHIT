@@ -29,8 +29,9 @@ class MeasurementMetaData;
 
 class Measurement {
  public:
-  Measurement(float value, MeasurementMetaData *metaData)
-      : stringRepresentation(toString(value)),
+  Measurement(float value, MeasurementMetaData *metaData,
+              const char *floatRepresentation = "%0.1f")
+      : stringRepresentation(toString(value, floatRepresentation)),
         metaData(metaData),
         floatValue(value),
         state(MeasurementDataState::VALID) {}
@@ -52,8 +53,7 @@ class Measurement {
         intValue(0),
         state(error ? MeasurementDataState::ERROR
                     : MeasurementDataState::NO_DATA) {}
-  Measurement(const Measurement &copy) = default;
-  Measurement(Measurement &&move) = default;
+
   std::string toTransmitString() const;
   const MeasurementMetaData *getMetaData() const { return metaData; }
   const MeasurementDataState getDataState() const { return state; }
@@ -74,9 +74,9 @@ class Measurement {
     snprintf(buf, sizeof(buf), "%d", value);
     return std::string(buf);
   }
-  static std::string toString(float value) {
+  static std::string toString(float value, const char *floatRepresentation) {
     char buf[33];
-    snprintf(buf, sizeof(buf), "%0.1f", value);
+    snprintf(buf, sizeof(buf), floatRepresentation, value);
     return std::string(buf);
   }
 };
@@ -86,8 +86,6 @@ class MeasurementMetaData : public SHIObject {
   MeasurementMetaData(const std::string &name, const std::string &unit,
                       SensorDataType type)
       : SHIObject(name, false), unit(unit), type(type) {}
-  MeasurementMetaData(const MeasurementMetaData &meta) = default;
-  MeasurementMetaData(MeasurementMetaData &&meta) = default;
   const std::string unit;
   SensorDataType type;
   void accept(Visitor &visitor) override;
@@ -106,8 +104,6 @@ class MeasurementBundle {
       : timeStamp(hw->getEpochInMs()), data(data), src(src) {}
   MeasurementBundle(std::vector<Measurement> &data, SHIObject *src)
       : timeStamp(hw->getEpochInMs()), data(data), src(src) {}
-  MeasurementBundle(const MeasurementBundle &readings) = default;
-  MeasurementBundle(MeasurementBundle &&readings) = default;
   uint64_t timeStamp = 0;
   std::vector<Measurement> data = {};
   SHIObject *src;
@@ -120,6 +116,10 @@ class Sensor : public SHIObject {
   virtual bool stopSensor() = 0;
   void accept(Visitor &visitor) override;
   virtual std::vector<std::shared_ptr<MeasurementMetaData>> *getMetaData();
+  Sensor(const Sensor &) = delete;
+  Sensor(Sensor &&) = delete;
+  Sensor &operator=(const Sensor &) = delete;
+  Sensor &operator=(Sensor &&) = delete;
   virtual ~Sensor() = default;
 
  protected:
@@ -134,9 +134,8 @@ class SensorGroupConfiguration : public Configuration {
  public:
   explicit SensorGroupConfiguration(const JsonObject &obj);
   explicit SensorGroupConfiguration(const std::string &name) : name(name) {}
-  std::string toJson();
-  void printJson(std::ostream printer);
-  void fillData(JsonDocument &doc);  // NOLINT
+  int getExpectedCapacity() override;
+  void fillData(JsonObject &doc) override;
   std::string name = "default";
 };
 
@@ -154,7 +153,7 @@ class SensorGroup : public SHIObject {
   void accept(Visitor &visitor) override;
   void addSensor(std::shared_ptr<Sensor> sensor);
   std::vector<std::shared_ptr<Sensor>> *getSensors() { return &sensors; }
-  Configuration *getConfig() { return &config; }
+  Configuration *getConfig() override { return &config; }
   SensorGroupConfiguration config;
 
  private:
