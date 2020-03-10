@@ -26,48 +26,54 @@ class Print {
   int writeError;
   size_t printUnsigned(uint64_t value, int base);
   size_t printSigned(int64_t value, int base);
+  template<typename T>
+  size_t internalPrint(T val, std::true_type, int base){
+    return printUnsigned(static_cast<uint64_t>(val), base);
+  }
+  template<typename T>
+  size_t internalPrint(T val, std::false_type, int base){
+    return printSigned(static_cast<int64_t>(val), base);
+  }
+  
+  template<typename T>
+  size_t internalPrintln(T val, std::true_type, int base){
+    return printUnsigned(static_cast<uint64_t>(val), base)+println();
+  }
+  template<typename T>
+  size_t internalPrintln(T val, std::false_type, int base){
+    return printSigned(static_cast<int64_t>(val), base)+println();
+  }
 
  public:
   int getWriteError();
   void clearWriteError();
 
   virtual size_t write(uint8_t) = 0;
-  size_t write(const char* str);
+  size_t write(const char str[]);
   virtual size_t write(const uint8_t* buffer, size_t size) = 0;
   size_t write(const char* buffer, size_t size);
 
-  size_t write(int8_t c);
-  size_t write(int16_t t);
-  size_t write(uint16_t t);
-  size_t write(int32_t t);
-  size_t write(uint32_t t);
-  size_t write(int64_t t);
-  size_t write(uint64_t t);
+  template <typename T>
+  size_t write(T c) {return write(static_cast<uint8_t>(c));};
   // Enable write(char) to fall through to write(uint8_t)
   size_t write(char c);
 
   size_t printf(const char* format, ...) __attribute__((format(printf, 2, 3)));
   size_t print(const char value[]);
   size_t print(char value);
-  size_t print(uint8_t value, int base = DEC);
-  size_t print(int16_t value, int base = DEC);
-  size_t print(uint16_t value, int base = DEC);
-  size_t print(int32_t value, int base = DEC);
-  size_t print(uint32_t value, int base = DEC);
-  size_t print(int64_t value, int base = DEC);
-  size_t print(uint64_t value, int base = DEC);
+  template <typename T>
+  size_t print(T value, int base=DEC){
+    return internalPrint(value, std::is_unsigned<T>(), base);
+  }
   size_t print(double value, int precision = 2);
   size_t print(struct tm* timeinfo, const char* format);
 
   size_t println(const char value[]);
   size_t println(char value);
-  size_t println(uint8_t value, int base = DEC);
-  size_t println(int16_t value, int base = DEC);
-  size_t println(uint16_t value, int base = DEC);
-  size_t println(int32_t value, int base = DEC);
-  size_t println(uint32_t value, int base = DEC);
-  size_t println(int64_t value, int base = DEC);
-  size_t println(uint64_t value, int base = DEC);
+  template <typename T>
+  size_t println(T value, int base=DEC){
+    return internalPrintln(value, std::is_unsigned<T>(), base);
+  }
   size_t println(double value, int precision = 2);
   size_t println(void);
   size_t println(struct tm* timeinfo, const char* format);

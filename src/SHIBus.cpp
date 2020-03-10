@@ -9,25 +9,19 @@
 int SHI::Print::getWriteError() { return writeError; }
 void SHI::Print::clearWriteError() { writeError = 0; }
 
-size_t SHI::Print::write(const char* str) {
+size_t SHI::Print::write(const char str[]) {
   if (str != nullptr) {
-    int len = strlen(str);
+    size_t len = strlen(str);
     return write(str, len);
   }
   return 0;
 }
+
 size_t SHI::Print::write(const char* buffer, size_t size) {
   return write(reinterpret_cast<uint8_t*>(const_cast<char*>(buffer)), size);
 }
 
 size_t SHI::Print::write(char c) { return write(static_cast<uint8_t>(c)); }
-size_t SHI::Print::write(int8_t c) { return write(static_cast<uint8_t>(c)); }
-size_t SHI::Print::write(int16_t t) { return write(static_cast<uint8_t>(t)); }
-size_t SHI::Print::write(uint16_t t) { return write(static_cast<uint8_t>(t)); }
-size_t SHI::Print::write(int32_t t) { return write(static_cast<uint8_t>(t)); }
-size_t SHI::Print::write(uint32_t t) { return write(static_cast<uint8_t>(t)); }
-size_t SHI::Print::write(int64_t t) { return write(static_cast<uint8_t>(t)); }
-size_t SHI::Print::write(uint64_t t) { return write(static_cast<uint8_t>(t)); }
 
 size_t SHI::Print::printf(const char* format, ...) {
   va_list args;
@@ -68,10 +62,7 @@ std::string toString(int value) {
     int current = value;
     value /= 10;
     char number = current - 10 * value;
-    if (number < 10)
-      result[--pos] = number + '0';
-    else
-      result[--pos] = (number - 10) + 'A';
+    result[--pos] = number + '0';
   } while (value != 0);
   return std::string(&result[pos], 20 - pos);
 }
@@ -94,63 +85,31 @@ size_t SHI::Print::printUnsigned(uint64_t value, int base) {
 
 size_t SHI::Print::print(const char value[]) { return write(value); }
 size_t SHI::Print::print(char value) { return write(value); }
-size_t SHI::Print::print(uint8_t value, int base) {
-  return printUnsigned(value, base);
-}
-size_t SHI::Print::print(int16_t value, int base) {
-  return printSigned(value, base);
-}
-size_t SHI::Print::print(uint16_t value, int base) {
-  return printUnsigned(value, base);
-}
-size_t SHI::Print::print(int32_t value, int base) {
-  return printSigned(value, base);
-}
-size_t SHI::Print::print(uint32_t value, int base) {
-  return printUnsigned(value, base);
-}
-size_t SHI::Print::print(int64_t value, int base) {
-  return printSigned(value, base);
-}
-size_t SHI::Print::print(uint64_t value, int base) {
-  return printUnsigned(value, base);
-}
+
 size_t SHI::Print::print(double value, int precision) {
   if (precision == 2)  // This is the default, so be smarter here
     return printf("%0.2f", value);
   std::string format = std::string("%0.") + toString(precision) + "f";
   return printf(format.c_str(), value);
 }
-size_t SHI::Print::print(struct tm* timeinfo, const char* format) { return 0; }
+
+size_t SHI::Print::print(struct tm* timeinfo, const char* format) {
+  if (format == nullptr) {
+    format = "%c";
+  }
+  char buf[64];
+  size_t written=strftime(buf, sizeof(buf), format, timeinfo);
+  if (written != 0) {
+    write(buf, written);
+  }
+  return written;
+}
 
 size_t SHI::Print::println(const char value[]) {
   return print(value) + println();
 }
+
 size_t SHI::Print::println(char value) { return print(value) + println(); }
-size_t SHI::Print::println(uint8_t value, int base) {
-  return print(value, base) + println();
-}
-size_t SHI::Print::println(int16_t value, int base) {
-  return print(value, base) + println();
-}
-size_t SHI::Print::println(uint16_t value, int base) {
-  return print(value, base) + println();
-}
-size_t SHI::Print::println(int32_t value, int base) {
-  return print(value, base) + println();
-}
-size_t SHI::Print::println(uint32_t value, int base) {
-  return print(value, base) + println();
-}
-size_t SHI::Print::println(int64_t value, int base) {
-  return print(value, base) + println();
-}
-size_t SHI::Print::println(uint64_t value, int base) {
-  return print(value, base) + println();
-}
-size_t SHI::Print::println(double value, int precision) {
-  return print(value, precision) + println();
-}
 size_t SHI::Print::println(void) { return print('\n'); }
 size_t SHI::Print::println(struct tm* timeinfo, const char* format) {
   return print(timeinfo, format) + println();
