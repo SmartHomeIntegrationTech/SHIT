@@ -44,8 +44,8 @@ size_t SHI::Print::printf(const char* format, ...) {
       return -1;
     }
   }
-  //Becaue we added one in the beginning
-  return written-1;
+  // Becaue we added one in the beginning
+  return written - 1;
 }
 size_t SHI::Print::printSigned(int64_t value, int base) {
   if (value < 0) {
@@ -98,7 +98,7 @@ size_t SHI::Print::print(struct tm* timeinfo, const char* format) {
     format = "%c";
   }
   char buf[64];
-  size_t written=strftime(buf, sizeof(buf), format, timeinfo);
+  size_t written = strftime(buf, sizeof(buf), format, timeinfo);
   if (written != 0) {
     write(buf, written);
   }

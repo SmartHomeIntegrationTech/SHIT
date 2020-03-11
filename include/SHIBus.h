@@ -26,22 +26,22 @@ class Print {
   int writeError;
   size_t printUnsigned(uint64_t value, int base);
   size_t printSigned(int64_t value, int base);
-  template<typename T>
-  size_t internalPrint(T val, std::true_type, int base){
+  template <typename T>
+  size_t internalPrint(T val, std::true_type, int base) {
     return printUnsigned(static_cast<uint64_t>(val), base);
   }
-  template<typename T>
-  size_t internalPrint(T val, std::false_type, int base){
+  template <typename T>
+  size_t internalPrint(T val, std::false_type, int base) {
     return printSigned(static_cast<int64_t>(val), base);
   }
-  
-  template<typename T>
-  size_t internalPrintln(T val, std::true_type, int base){
-    return printUnsigned(static_cast<uint64_t>(val), base)+println();
+
+  template <typename T>
+  size_t internalPrintln(T val, std::true_type, int base) {
+    return printUnsigned(static_cast<uint64_t>(val), base) + println();
   }
-  template<typename T>
-  size_t internalPrintln(T val, std::false_type, int base){
-    return printSigned(static_cast<int64_t>(val), base)+println();
+  template <typename T>
+  size_t internalPrintln(T val, std::false_type, int base) {
+    return printSigned(static_cast<int64_t>(val), base) + println();
   }
 
  public:
@@ -54,7 +54,9 @@ class Print {
   size_t write(const char* buffer, size_t size);
 
   template <typename T>
-  size_t write(T c) {return write(static_cast<uint8_t>(c));};
+  size_t write(T c) {
+    return write(static_cast<uint8_t>(c));
+  }
   // Enable write(char) to fall through to write(uint8_t)
   size_t write(char c);
 
@@ -62,7 +64,7 @@ class Print {
   size_t print(const char value[]);
   size_t print(char value);
   template <typename T>
-  size_t print(T value, int base=DEC){
+  size_t print(T value, int base = DEC) {
     return internalPrint(value, std::is_unsigned<T>(), base);
   }
   size_t print(double value, int precision = 2);
@@ -71,13 +73,13 @@ class Print {
   size_t println(const char value[]);
   size_t println(char value);
   template <typename T>
-  size_t println(T value, int base=DEC){
+  size_t println(T value, int base = DEC) {
     return internalPrintln(value, std::is_unsigned<T>(), base);
   }
   size_t println(double value, int precision = 2);
   size_t println(void);
   size_t println(struct tm* timeinfo, const char* format);
-  virtual void flush() {};
+  virtual void flush() {}
 };
 
 class Bus : public SHIObject {
@@ -120,15 +122,15 @@ class SPIBus : public Bus {
 };
 
 enum class I2CError {
-    I2C_ERROR_OK=0,
-    I2C_ERROR_DEV,
-    I2C_ERROR_ACK,
-    I2C_ERROR_TIMEOUT,
-    I2C_ERROR_BUS,
-    I2C_ERROR_BUSY,
-    I2C_ERROR_MEMORY,
-    I2C_ERROR_CONTINUE,
-    I2C_ERROR_NO_BEGIN
+  I2C_ERROR_OK = 0,
+  I2C_ERROR_DEV,
+  I2C_ERROR_ACK,
+  I2C_ERROR_TIMEOUT,
+  I2C_ERROR_BUS,
+  I2C_ERROR_BUSY,
+  I2C_ERROR_MEMORY,
+  I2C_ERROR_CONTINUE,
+  I2C_ERROR_NO_BEGIN
 };
 
 class I2CBus : public Bus, Print {
@@ -136,10 +138,10 @@ class I2CBus : public Bus, Print {
   virtual char* getErrorText(uint8_t err) = 0;
 
   virtual I2CError writeTransmission(uint16_t address, uint8_t* buff,
-                                      uint16_t size, bool sendStop = true) = 0;
+                                     uint16_t size, bool sendStop = true) = 0;
   virtual I2CError readTransmission(uint16_t address, uint8_t* buff,
-                                     uint16_t size, bool sendStop = true,
-                                     uint32_t* readCount = NULL) = 0;
+                                    uint16_t size, bool sendStop = true,
+                                    uint32_t* readCount = NULL) = 0;
 
   virtual void beginTransmission(uint16_t address) = 0;
   virtual uint8_t endTransmission(bool sendStop = true) = 0;
