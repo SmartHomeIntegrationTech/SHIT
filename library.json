@@ -13,7 +13,5 @@
     }
   ],
   "version": "0.1.0",
-  "dependencies": {
-    "ArduinoJson": "^6.14.1"
-  }
+  "dependencies": {}
 }
