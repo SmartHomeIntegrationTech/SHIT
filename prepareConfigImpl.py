@@ -17,24 +17,27 @@ fileStart = '''/*
 # include <string>
 '''
 sensorSpecific = '''
-#include \"{header}\"
+# include \"{header}\"
 // Configuration implementation for class {qfn}
 
 {qfn}::{name}(const JsonObject &obj):
  {initializer}
   {{}}
 
-void {qfn}::fillData(JsonObject &doc) {{
+void {qfn}::fillData(JsonObject &doc) const {{
   {filler}
 }}
 
-int {qfn}::getExpectedCapacity() {{
+int {qfn}::getExpectedCapacity() const {{
   return JSON_OBJECT_SIZE({len});
 }}
 '''
 
 
 def generateCodeForProperty(p: CppVariable, initializer: list, toString: list):
+    if p['constant'] == 1:
+        print("You can't have a const in the Configuration class!")
+        exit(1)
     map = {'name': p["name"], 'default': p["default"]}
     if "default" in p:
         print("   Code for %s=%s" % (p["name"], p["default"]))
@@ -97,14 +100,10 @@ def parseHeader(headerFullPath: str):
         cpp.close()
 
 
-parseHeader(
-    "/Users/karstenbecker/PlatformIO/Projects/SHIT/include/SHISensor.h")
-parseHeader(
-    "/Users/karstenbecker/PlatformIO/Projects/SmartHomeIntegration/include/SHIESP32HW.h")
-parseHeader(
-    "/Users/karstenbecker/PlatformIO/Projects/SHIMulticast/include/SHIMulticastHandler.h")
-parseHeader("/Users/karstenbecker/PlatformIO/Projects/SHIMQTT/include/SHIMQTT.h")
-parseHeader(
-    "/Users/karstenbecker/PlatformIO/Projects/SHIOpenhabRest/include/SHIOpenhabRestCommunicator.h")
-parseHeader(
-    "/Users/karstenbecker/PlatformIO/Projects/SHIBME680/include/SHIBME680.h")
+basePath = "/Users/karstenbecker/PlatformIO/Projects/"
+parseHeader(basePath+"SHIT/include/SHISensor.h")
+parseHeader(basePath+"SmartHomeIntegration/include/SHIESP32HW.h")
+parseHeader(basePath+"SHIMulticast/include/SHIMulticastHandler.h")
+parseHeader(basePath+"SHIMQTT/include/SHIMQTT.h")
+parseHeader(basePath+"SHIOpenhabRest/include/SHIOpenhabRestCommunicator.h")
+parseHeader(basePath+"SHIBME680/include/SHIBME680.h")

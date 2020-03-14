@@ -23,10 +23,10 @@ extern const std::string STATUS_OK;
 class SHIObject {
  public:
   explicit SHIObject(const std::string &name, bool initStatus = true);
-  SHIObject(const SHIObject&) = delete;
-  SHIObject(SHIObject&&) = delete;
-  SHIObject& operator=(const SHIObject&) = delete;
-  SHIObject& operator=(SHIObject&&) = delete;
+  SHIObject(const SHIObject &) = delete;
+  SHIObject(SHIObject &&) = delete;
+  SHIObject &operator=(const SHIObject &) = delete;
+  SHIObject &operator=(SHIObject &&) = delete;
   virtual ~SHIObject() = default;
   virtual const std::string getName() const { return name; }
   virtual void accept(Visitor &visitor) = 0;  // NOLINT (a warning about
@@ -39,9 +39,22 @@ class SHIObject {
   virtual std::string getQualifiedName(
       const std::string &seperator = ".") const;
   virtual Measurement getStatus();
-  virtual Configuration *getConfig() = 0;
+  template <typename T>
+  constexpr const T getConfigAs() const {
+    static_assert(std::is_base_of<Configuration, T>::value,
+                  "Type needs to derive of Config");
+    return *static_cast<const T *>(getConfig());
+  }
+  virtual const Configuration *getConfig() const = 0;
+  virtual bool reconfigure(Configuration *newConfig) = 0;
 
  protected:
+  template <typename T>
+  static constexpr T castConfig(Configuration *config) {
+    static_assert(std::is_base_of<Configuration, T>::value,
+                  "Type needs to derive of Config");
+    return *static_cast<T *>(config);
+  }
   SHIObject *parent = nullptr;
   std::string name;
   std::string statusMessage = STATUS_OK;

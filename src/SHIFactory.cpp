@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include "ArduinoJson.h"
 #include "SHICommunicator.h"
@@ -19,17 +20,22 @@ SHI::Factory *SHI::Factory::get() {
   return instance;
 }
 
-void SHI::Factory::construct(const std::string &json) {
+SHI::FactoryErrors SHI::Factory::construct(const std::string &json) {
   DeserializationError err = deserializeJson(doc, json);
   if (err) {
-    // DO SOMETHING!
-    // SHI::hw is not initialized yet, so...
-    return;
+    return FactoryErrors::FailureToParseJson;
   }
   JsonObject obj = doc.as<JsonObject>();
+  if (!obj.containsKey("hw")) return SHI::FactoryErrors::NoHWKeyFound;
   auto hwObj = obj["hw"];
-  auto facObj = factories["hw"](hwObj);
+  if (!hwObj.is<JsonObject>()) return SHI::FactoryErrors::InvalidHWKeyFound;
+  auto factoryFind = factories.find("hw");
+  if (factoryFind != factories.end()) {
+    auto facObj = factoryFind->second(hwObj);
   SHI::hw = static_cast<SHI::Hardware *>(facObj);
+    return FactoryErrors::None;
+  }
+  return FactoryErrors::MissingRegistryForHW;
 }
 
 bool SHI::Factory::registerFactory(const std::string &name,
@@ -42,6 +48,7 @@ SHI::Factory *SHI::Factory::instance = nullptr;
 
 SHI::Hardware *SHI::Factory::defaultHardwareFactory(SHI::Hardware *hardware,
                                                     const JsonObject &obj) {
+  SHI::hw = hardware;
   std::cout << __func__ << std::endl;
   JsonArray sensors = obj["$sensors"];
   for (JsonObject sensorObj : sensors) {
@@ -111,7 +118,7 @@ SHI::Sensor *SHI::Factory::defaultSensorFactory(SHI::Sensor *sensor,
   return sensor;
 }
 
-std::string SHI::Configuration::toJson() {
+std::string SHI::Configuration::toJson() const {
   DynamicJsonDocument doc(getExpectedCapacity());
   auto root = doc.as<JsonObject>();
   fillData(root);
@@ -120,7 +127,7 @@ std::string SHI::Configuration::toJson() {
   return std::string(output);
 }
 
-void SHI::Configuration::printJson(std::ostream printer) {
+void SHI::Configuration::printJson(std::ostream printer) const {
   DynamicJsonDocument doc(getExpectedCapacity());
   auto root = doc.as<JsonObject>();
   fillData(root);

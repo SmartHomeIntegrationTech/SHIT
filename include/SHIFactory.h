@@ -9,21 +9,39 @@
 #include <stdio.h>
 
 #include <functional>
+#include <iostream>
 #include <map>
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "ArduinoJson.h"
 #include "SHIObject.h"
 
 namespace SHI {
 
+enum class FactoryErrors {
+  /// All went according to plan
+  None = 0,
+  /// The JSON presented to construct was not valid
+  FailureToParseJson,
+  /// The JSON for construct did not contain the root hw element
+  NoHWKeyFound,
+  /// The type of the hw root element was incorrect
+  InvalidHWKeyFound,
+  /// There seems to be no hardware registered
+  MissingRegistryForHW
+};
+
 class Configuration {
  public:
-  virtual std::string toJson();
-  virtual void printJson(std::ostream printer);
-  virtual int getExpectedCapacity() = 0;
+  virtual std::string toJson() const;
+  virtual void printJson(std::ostream printer) const;
   virtual void fillData(
-      JsonObject &obj) = 0;  // NOLINT Yes, non constant reference
+      JsonObject &obj) const = 0;  // NOLINT Yes, non constant reference
+ protected:
+  virtual int getExpectedCapacity() const = 0;
 };
 
 typedef std::function<SHI::SHIObject *(const JsonObject &obj)> factoryFunction;
@@ -31,8 +49,14 @@ typedef std::function<SHI::SHIObject *(const JsonObject &obj)> factoryFunction;
 class Factory {
  public:
   static Factory *get();
+  /// This is used for testing to ensure that all tests are happening under the
+  /// same conditions
+  static void reset() {
+    delete instance;
+    instance = nullptr;
+  }
   bool registerFactory(const std::string &name, factoryFunction factory);
-  void construct(const std::string &json);
+  FactoryErrors construct(const std::string &json);
 
   static SHI::Hardware *defaultHardwareFactory(SHI::Hardware *hardware,
                                                const JsonObject &obj);

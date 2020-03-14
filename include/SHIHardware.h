@@ -54,10 +54,10 @@ class Hardware : public SHIObject {
   virtual int64_t getEpochInMs() = 0;
 
   void publishStatus(const SHI::Measurement &status, SHI::SHIObject *src);
-  Hardware(const Hardware&) = delete;
-  Hardware(Hardware&&) = delete;
-  Hardware& operator=(const Hardware&) = delete;
-  Hardware& operator=(Hardware&&) = delete;
+  Hardware(const Hardware &) = delete;
+  Hardware(Hardware &&) = delete;
+  Hardware &operator=(const Hardware &) = delete;
+  Hardware &operator=(Hardware &&) = delete;
   virtual ~Hardware() = default;
 
  protected:

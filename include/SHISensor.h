@@ -95,7 +95,8 @@ class MeasurementMetaData : public SHIObject {
   Measurement measuredStr(std::string value, bool error = false);
   Measurement measuredNoData();
   Measurement measuredError();
-  Configuration *getConfig() override { return nullptr; }
+  Configuration *getConfig() const override { return nullptr; }
+  bool reconfigure(Configuration *newConfig) override { return false; }
 };
 
 class MeasurementBundle {
@@ -134,9 +135,11 @@ class SensorGroupConfiguration : public Configuration {
  public:
   explicit SensorGroupConfiguration(const JsonObject &obj);
   explicit SensorGroupConfiguration(const std::string &name) : name(name) {}
-  int getExpectedCapacity() override;
-  void fillData(JsonObject &doc) override;
+  void fillData(JsonObject &doc) const override;
   std::string name = "default";
+
+ protected:
+  int getExpectedCapacity() const override;
 };
 
 class SensorGroup : public SHIObject {
@@ -153,7 +156,11 @@ class SensorGroup : public SHIObject {
   void accept(Visitor &visitor) override;
   void addSensor(std::shared_ptr<Sensor> sensor);
   std::vector<std::shared_ptr<Sensor>> *getSensors() { return &sensors; }
-  Configuration *getConfig() override { return &config; }
+  const Configuration *getConfig() const override { return &config; }
+  bool reconfigure(Configuration *newConfig) override {
+    config = castConfig<SensorGroupConfiguration>(newConfig);
+    return true;
+  }
   SensorGroupConfiguration config;
 
  private:
