@@ -38,15 +38,16 @@ def generateCodeForProperty(p: CppVariable, initializer: list, toString: list):
     if p['constant'] == 1:
         print("You can't have a const in the Configuration class!")
         exit(1)
-    map = {'name': p["name"], 'default': p["default"]}
+    map = {'name': p["name"], 'default': "", 'type': p["type"]}
     if "default" in p:
-        print("   Code for %s=%s" % (p["name"], p["default"]))
+        map['default'] = " | "+p["default"]
+    print("   Code for %s" % (p["name"]))
+    if (not p["type"] in ["bool", "int", "std::string", "float", "double"]):
         initializer.append(
-            "      {name}(obj[\"{name}\"] | {default})".format_map(map))
+            "      {name}(static_cast<{type}>(obj[\"{name}\"].as<int>(){default}))".format_map(map))
     else:
-        print("   Code for %s" % p["name"])
         initializer.append(
-            "      {name}(obj[\"{name}\"])".format_map(map))
+            "      {name}(obj[\"{name}\"]{default})".format_map(map))
     toString.append("  doc[\"{name}\"] = {name};".format_map(map))
 
 
@@ -107,3 +108,4 @@ parseHeader(basePath+"SHIMulticast/include/SHIMulticastHandler.h")
 parseHeader(basePath+"SHIMQTT/include/SHIMQTT.h")
 parseHeader(basePath+"SHIOpenhabRest/include/SHIOpenhabRestCommunicator.h")
 parseHeader(basePath+"SHIBME680/include/SHIBME680.h")
+parseHeader(basePath+"SHIBME280/include/SHIBME280.h")
