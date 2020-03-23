@@ -57,6 +57,8 @@ class Measurement {
   std::string toTransmitString() const;
   const MeasurementMetaData *getMetaData() const { return metaData; }
   const MeasurementDataState getDataState() const { return state; }
+  int getIntValue() const { return intValue; }
+  int getFloatValue() const { return floatValue; }
 
   const std::string stringRepresentation;
 

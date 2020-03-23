@@ -20,8 +20,11 @@ sensorSpecific = '''
 # include \"{header}\"
 // Configuration implementation for class {qfn}
 
-{qfn}::{name}(const JsonObject &obj):
- {initializer}
+namespace {{
+    {arrayInitFunctions}
+}}  // namespace
+
+{qfn}::{name}(const JsonObject &obj){initializer}
   {{}}
 
 void {qfn}::fillData(JsonObject &doc) const {{
@@ -34,21 +37,45 @@ int {qfn}::getExpectedCapacity() const {{
 '''
 
 
-def generateCodeForProperty(p: CppVariable, initializer: list, toString: list):
+def generateCodeForProperty(p: CppVariable, initializer: list, toString: list, arrayFunctions: list):
     if p['constant'] == 1:
         print("You can't have a const in the Configuration class!")
         exit(1)
-    map = {'name': p["name"], 'default': "", 'type': p["type"]}
+    map = {'name': p["name"], 'default': ".as<{type}>()", 'type': p["type"]}
     if "default" in p:
         map['default'] = " | "+p["default"]
     print("   Code for %s" % (p["name"]))
-    if (not p["type"] in ["bool", "int", "std::string", "float", "double"]):
+    if p["type"].startswith("std::vector"):
+        arrayFunctions.append('''
+{type} {name}FromArray(JsonArray array) {{
+    {type} result;
+    for (JsonVariant &&elem : array) {{
+        result.push_back(elem);
+    }}
+    return result;
+}}
+
+JsonArray {name}ToArray({type} arrVar) {{
+    JsonArray result;
+    for (auto &&var : arrVar) {{
+        result.add(var);
+    }}
+    return result;
+}}
+        '''.format_map(map))
+        initializer.append(
+            "      {name}({name}FromArray(obj[\"{name}\"].as<JsonArray>()))".format_map(map))
+    elif (not p["type"] in ["bool", "int", "std::string", "float", "double"]):
         initializer.append(
             "      {name}(static_cast<{type}>(obj[\"{name}\"].as<int>(){default}))".format_map(map))
     else:
         initializer.append(
             "      {name}(obj[\"{name}\"]{default})".format_map(map))
-    toString.append("  doc[\"{name}\"] = {name};".format_map(map))
+    if p["type"].startswith("std::vector"):
+        toString.append(
+            "  doc[\"{name}\"] = {name}ToArray({name});".format_map(map))
+    else:
+        toString.append("  doc[\"{name}\"] = {name};".format_map(map))
 
 
 def parseHeader(headerFullPath: str):
@@ -63,6 +90,7 @@ def parseHeader(headerFullPath: str):
     for name, clazz in cppHeader.classes.items():
         initializer = []
         toString = []
+        arrayInitFunctions = []
         nameSpacePrefix = ""
         if clazz["namespace"]:
             nameSpacePrefix = clazz["namespace"]+"::"
@@ -71,7 +99,7 @@ def parseHeader(headerFullPath: str):
         print(name)
         foundConfigClass = False
         for inherit in clazz["inherits"]:
-            if (nameSpacePrefix+inherit["class"] == "SHI::Configuration"):
+            if (nameSpacePrefix+inherit["class"] == "SHI::Configuration" or nameSpacePrefix+inherit["class"] == "SHI::SHI::Configuration"):
                 foundConfigClass = True
         if not foundConfigClass:
             print(
@@ -82,11 +110,16 @@ def parseHeader(headerFullPath: str):
             if (access == "public"):
                 for p in prop:
                     print("  %s" % p)
-                    generateCodeForProperty(p, initializer, toString)
+                    generateCodeForProperty(
+                        p, initializer, toString, arrayInitFunctions)
             else:
                 print("  Skipping non public members")
         map['len'] = len(initializer)
-        map['initializer'] = ",\n".join(initializer)
+        map['arrayInitFunctions'] = "".join(arrayInitFunctions)
+        if len(initializer) > 0:
+            map['initializer'] = ":\n"+(",\n".join(initializer))
+        else:
+            map['initializer'] = ""
         map['filler'] = "\n".join(toString)
         sensorSpecifics.append(sensorSpecific.format_map(map))
 
@@ -103,9 +136,13 @@ def parseHeader(headerFullPath: str):
 
 basePath = "/Users/karstenbecker/PlatformIO/Projects/"
 parseHeader(basePath+"SHIT/include/SHISensor.h")
-parseHeader(basePath+"SmartHomeIntegration/include/SHIESP32HW.h")
+parseHeader(basePath+"SHIESP32HW/include/SHIESP32HW.h")
 parseHeader(basePath+"SHIMulticast/include/SHIMulticastHandler.h")
 parseHeader(basePath+"SHIMQTT/include/SHIMQTT.h")
 parseHeader(basePath+"SHIOpenhabRest/include/SHIOpenhabRestCommunicator.h")
 parseHeader(basePath+"SHIBME680/include/SHIBME680.h")
 parseHeader(basePath+"SHIBME280/include/SHIBME280.h")
+parseHeader(basePath+"SHIAPDS9960/include/SHIAPDS9960.h")
+parseHeader(basePath+"SHISDS011/include/SHISDS011.h")
+parseHeader(basePath+"SHIDigitalInput/include/SHIDigitalInput.h")
+parseHeader(basePath+"SHISDS1306OLED/include/SHISDS1306OLED.h")

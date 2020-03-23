@@ -6,7 +6,7 @@
 
 // WARNING, this is an automatically generated file!
 // Don't change anything in here.
-// Last update 2020-03-12
+// Last update 2020-03-23
 
 # include <iostream>
 # include <string>
@@ -15,8 +15,12 @@
 # include "SHISensor.h"
 // Configuration implementation for class SHI::SensorGroupConfiguration
 
+namespace {
+    
+}  // namespace
+
 SHI::SensorGroupConfiguration::SensorGroupConfiguration(const JsonObject &obj):
-       name(obj["name"] | "default")
+      name(obj["name"] | "default")
   {}
 
 void SHI::SensorGroupConfiguration::fillData(JsonObject &doc) const {
