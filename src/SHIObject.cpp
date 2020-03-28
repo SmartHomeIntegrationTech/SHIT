@@ -8,11 +8,12 @@
 #include <string>
 
 #include "SHISensor.h"
+using SHI::Measurement;
+using SHI::SHIObject;
 
-const SHI::Measurement NODATA(nullptr, false);
+const Measurement NODATA(nullptr, false);
 
-SHI::SHIObject::SHIObject(const std::string &name, bool initStatus)
-    : name(name) {
+SHIObject::SHIObject(const std::string &name, bool initStatus) : name(name) {
   if (initStatus) {
     status = std::make_shared<MeasurementMetaData>(STATUS_ITEM, "",
                                                    SensorDataType::STATUS);
@@ -20,8 +21,7 @@ SHI::SHIObject::SHIObject(const std::string &name, bool initStatus)
   }
 }
 
-std::string SHI::SHIObject::getQualifiedName(
-    const std::string &seperator) const {
+std::string SHIObject::getQualifiedName(const std::string &seperator) const {
   if (parent != nullptr) {
     return std::string(parent->getQualifiedName(seperator)) + seperator +
            getName();
@@ -29,7 +29,7 @@ std::string SHI::SHIObject::getQualifiedName(
   return std::string(getName());
 }
 
-SHI::Measurement SHI::SHIObject::getStatus() {
+Measurement SHIObject::getStatus() {
   if (status.get() == nullptr) return NODATA;
   return status->measuredStr(statusMessage, fatalError);
 }

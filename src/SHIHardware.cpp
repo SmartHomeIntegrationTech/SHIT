@@ -10,21 +10,27 @@
 #include "SHICommunicator.h"
 #include "SHISensor.h"
 
+using SHI::Communicator;
+using SHI::Hardware;
+using SHI::MeasurementDataState;
+using SHI::Sensor;
+using SHI::SHIObject;
+using SHI::Visitor;
+
 namespace {
-class StatusVisitor : public SHI::Visitor {
+class StatusVisitor : public Visitor {
  public:
   bool hasFatalError = false;
-  void enterVisit(SHI::Sensor *sensor) { publishStatus(sensor); }
-  void enterVisit(SHI::Hardware *hardware) { publishStatus(hardware); }
-  void visit(SHI::Communicator *communicator) { publishStatus(communicator); }
-  void publishStatus(SHI::SHIObject *obj) {
+  void enterVisit(Sensor *sensor) { publishStatus(sensor); }
+  void enterVisit(Hardware *hardware) { publishStatus(hardware); }
+  void visit(Communicator *communicator) { publishStatus(communicator); }
+  void publishStatus(SHIObject *obj) {
     auto status = obj->getStatus();
-    if (status.getDataState() != SHI::MeasurementDataState::NO_DATA) {
+    if (status.getDataState() != MeasurementDataState::NO_DATA) {
       SHI::hw->publishStatus(status, obj);
       auto statusMsg = status.stringRepresentation;
       if (statusMsg != SHI::STATUS_OK) {
-        auto isFatal =
-            status.getDataState() == SHI::MeasurementDataState::ERROR;
+        auto isFatal = status.getDataState() == MeasurementDataState::ERROR;
         if (isFatal) {
           hasFatalError = true;
           SHI::hw->logError("StatusVisitor", __func__,
@@ -41,41 +47,39 @@ class StatusVisitor : public SHI::Visitor {
 };
 }  // namespace
 
-SHI::Hardware::Hardware(const std::string &name) : SHIObject(name) {
+Hardware::Hardware(const std::string &name) : SHIObject(name) {
   defaultGroup = std::make_shared<SensorGroup>("default");
   sensors.push_back(defaultGroup);
 }
 
-void SHI::Hardware::logInfo(const std::string &name, const char *func,
-                            std::string message) {
+void Hardware::logInfo(const std::string &name, const char *func,
+                       std::string message) {
   log((std::string("INFO: ") + name + "." + func + "() " + message).c_str());
 }
-void SHI::Hardware::logWarn(const std::string &name, const char *func,
-                            std::string message) {
+void Hardware::logWarn(const std::string &name, const char *func,
+                       std::string message) {
   log((std::string("WARN: ") + name + "." + func + "() " + message).c_str());
 }
-void SHI::Hardware::logError(const std::string &name, const char *func,
-                             std::string message) {
+void Hardware::logError(const std::string &name, const char *func,
+                        std::string message) {
   log((std::string("ERROR: ") + name + "." + func + "() " + message).c_str());
 }
 
-void SHI::Hardware::addSensorGroup(
-    std::shared_ptr<SHI::SensorGroup> sensorGroup) {
+void Hardware::addSensorGroup(std::shared_ptr<SensorGroup> sensorGroup) {
   sensorGroup->setParent(this);
   sensors.push_back(sensorGroup);
 }
 
-void SHI::Hardware::addSensor(std::shared_ptr<SHI::Sensor> sensor) {
+void Hardware::addSensor(std::shared_ptr<Sensor> sensor) {
   sensors[0]->addSensor(sensor);
 }
 
-void SHI::Hardware::addCommunicator(
-    std::shared_ptr<SHI::Communicator> communicator) {
+void Hardware::addCommunicator(std::shared_ptr<Communicator> communicator) {
   communicator->setParent(this);
   communicators.push_back(communicator);
 }
 
-void SHI::Hardware::setupSensors() {
+void Hardware::setupSensors() {
   defaultGroup->setParent(this);
   for (auto &&sensorGroup : sensors) {
     for (auto &&sensor : *sensorGroup->getSensors()) {
@@ -95,7 +99,7 @@ void SHI::Hardware::setupSensors() {
   }
 }
 
-void SHI::Hardware::setupCommunicators() {
+void Hardware::setupCommunicators() {
   auto status = getStatus();
   for (auto &&comm : communicators) {
     comm->setupCommunication();
@@ -103,7 +107,7 @@ void SHI::Hardware::setupCommunicators() {
   }
 }
 
-void SHI::Hardware::internalLoop() {
+void Hardware::internalLoop() {
   static int64_t lastStatusTime = 0;
   for (auto &&sensorGroup : sensors) {
     for (auto &&sensor : *sensorGroup->getSensors()) {
@@ -122,7 +126,7 @@ void SHI::Hardware::internalLoop() {
     logInfo(name, __func__, "Updating status of all");
     lastStatusTime = getEpochInMs();
     StatusVisitor visitor;
-    SHI::hw->accept(visitor);
+    hw->accept(visitor);
     hasFatalError = visitor.hasFatalError;
   }
 
@@ -134,14 +138,13 @@ void SHI::Hardware::internalLoop() {
   }
 }
 
-void SHI::Hardware::publishStatus(const SHI::Measurement &status,
-                                  SHI::SHIObject *src) {
+void Hardware::publishStatus(const Measurement &status, SHIObject *src) {
   for (auto &&comm : communicators) {
     comm->newStatus(status, src);
   }
 }
 
-void SHI::Hardware::accept(SHI::Visitor &visitor) {
+void Hardware::accept(Visitor &visitor) {
   visitor.enterVisit(this);
   status->accept(visitor);
   for (auto &&comm : communicators) {

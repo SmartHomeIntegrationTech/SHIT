@@ -76,4 +76,22 @@ class Factory {
   DynamicJsonDocument doc{5000};
 };
 
+class ConfigurationVisitor : public Visitor {
+ public:
+  void enterVisit(Sensor *sensor) override;
+  void leaveVisit(Sensor *sensor) override;
+  void enterVisit(SensorGroup *channel) override;
+  void leaveVisit(SensorGroup *channel) override;
+  void enterVisit(Hardware *harwdware) override;
+  void leaveVisit(Hardware *harwdware) override;
+  void visit(Communicator *communicator) override;
+  void visit(MeasurementMetaData *data) override;
+
+ private:
+  std::vector<std::pair<const std::string, const Configuration *>> sensors;
+  std::vector<std::pair<const std::string, const Configuration *>> comms;
+  std::vector<std::pair<const std::string, const Configuration *>> groups;
+  DynamicJsonDocument doc{5000};
+};
+
 }  // namespace SHI

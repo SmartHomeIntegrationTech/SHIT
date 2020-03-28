@@ -7,6 +7,11 @@
 
 #include <stdio.h>
 
+using SHI::Measurement;
+using SHI::MeasurementMetaData;
+using SHI::Sensor;
+using SHI::SensorGroup;
+
 namespace SHI {
 
 const std::string STATUS_ITEM = "Status";  // NOLINT
@@ -14,7 +19,7 @@ const std::string STATUS_OK = "OK";        // NOLINT
 
 }  // namespace SHI
 
-void SHI::SensorGroup::accept(SHI::Visitor& visitor) {
+void SensorGroup::accept(Visitor& visitor) {
   visitor.enterVisit(this);
   for (auto&& sensor : sensors) {
     sensor->accept(visitor);
@@ -22,11 +27,9 @@ void SHI::SensorGroup::accept(SHI::Visitor& visitor) {
   visitor.leaveVisit(this);
 }
 
-void SHI::MeasurementMetaData::accept(SHI::Visitor& visitor) {
-  visitor.visit(this);
-}
+void MeasurementMetaData::accept(Visitor& visitor) { visitor.visit(this); }
 
-void SHI::Sensor::accept(SHI::Visitor& visitor) {
+void Sensor::accept(Visitor& visitor) {
   visitor.enterVisit(this);
   status->accept(visitor);
   for (auto&& meta : metaData) {
@@ -35,12 +38,12 @@ void SHI::Sensor::accept(SHI::Visitor& visitor) {
   visitor.leaveVisit(this);
 }
 
-void SHI::SensorGroup::addSensor(std::shared_ptr<SHI::Sensor> sensor) {
+void SensorGroup::addSensor(std::shared_ptr<Sensor> sensor) {
   sensor->setParent(this);
   sensors.push_back(sensor);
 }
 
-std::string SHI::Measurement::toTransmitString() const {
+std::string Measurement::toTransmitString() const {
   switch (metaData->type) {
     case SensorDataType::STRING:
     case SensorDataType::STATUS:
@@ -50,29 +53,59 @@ std::string SHI::Measurement::toTransmitString() const {
   }
 }
 
-void SHI::Sensor::addMetaData(std::shared_ptr<SHI::MeasurementMetaData> meta) {
+int Measurement::getIntValue() const {
+  switch (metaData->type) {
+    case SensorDataType::FLOAT: {
+      float value = floatValue;
+      return value;
+    }
+    case SensorDataType::INT: {
+      return intValue;
+    }
+    case SensorDataType::STRING:
+    case SensorDataType::STATUS:
+    default:
+      return 0;
+  }
+}
+float Measurement::getFloatValue() const {
+  switch (metaData->type) {
+    case SensorDataType::FLOAT: {
+      return floatValue;
+    }
+    case SensorDataType::INT: {
+      // use proper rounding
+      int value = floatValue + 0.5;
+      return value;
+    }
+    case SensorDataType::STATUS:
+    case SensorDataType::STRING:
+    default:
+      return 0;
+  }
+}
+
+void Sensor::addMetaData(std::shared_ptr<MeasurementMetaData> meta) {
   meta->setParent(this);
   metaData.push_back(meta);
 }
 
-std::vector<std::shared_ptr<SHI::MeasurementMetaData>>*
-SHI::Sensor::getMetaData() {
+std::vector<std::shared_ptr<MeasurementMetaData>>* Sensor::getMetaData() {
   return &metaData;
 }
 
-SHI::Measurement SHI::MeasurementMetaData::measuredFloat(float value) {
-  return SHI::Measurement(value, this);
+Measurement MeasurementMetaData::measuredFloat(float value) {
+  return Measurement(value, this);
 }
-SHI::Measurement SHI::MeasurementMetaData::measuredInt(int value) {
-  return SHI::Measurement(value, this);
+Measurement MeasurementMetaData::measuredInt(int value) {
+  return Measurement(value, this);
 }
-SHI::Measurement SHI::MeasurementMetaData::measuredStr(std::string value,
-                                                       bool error) {
-  return SHI::Measurement(value, this, error);
+Measurement MeasurementMetaData::measuredStr(std::string value, bool error) {
+  return Measurement(value, this, error);
 }
-SHI::Measurement SHI::MeasurementMetaData::measuredNoData() {
-  return SHI::Measurement(this, false);
+Measurement MeasurementMetaData::measuredNoData() {
+  return Measurement(this, false);
 }
-SHI::Measurement SHI::MeasurementMetaData::measuredError() {
-  return SHI::Measurement(this, true);
+Measurement MeasurementMetaData::measuredError() {
+  return Measurement(this, true);
 }
