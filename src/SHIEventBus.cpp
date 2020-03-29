@@ -19,9 +19,7 @@ using SHI::EventBus::EventBuilder;
 using SHI::EventBus::Subscriber;
 using SHI::EventBus::SubscriberBuilder;
 
-SubscriberBuilder::SubscriberBuilder(SubscriberCallBack callBack,
-                                     bool everything)
-    : callBack(callBack) {
+SubscriberBuilder::SubscriberBuilder(bool everything) {
   if (everything) {
     sourceMask = Subscriber::ALL_SOURCES;
     eventMask = Subscriber::ALL_EVENTS;
@@ -31,95 +29,135 @@ SubscriberBuilder::SubscriberBuilder(SubscriberCallBack callBack,
   }
 }
 
-SubscriberBuilder SubscriberBuilder::empty(SubscriberCallBack callBack) {
-  return SubscriberBuilder(callBack);
+SubscriberBuilder SubscriberBuilder::empty() { return SubscriberBuilder(); }
+
+SubscriberBuilder SubscriberBuilder::everything() {
+  return SubscriberBuilder(true);
 }
 
-SubscriberBuilder SubscriberBuilder::everything(SubscriberCallBack callBack) {
-  return SubscriberBuilder(callBack, true);
+SubscriberBuilder SubscriberBuilder::forEvent(const Event &event) {
+  auto builder = empty();
+  builder = builder.addSource(event.sourceType);
+  builder = builder.addEvent(event.eventType);
+  builder = builder.setExactCustomField(event.customFields);
+  builder = builder.setHashedName(event.hashedName);
+  return builder;
 }
 
-SubscriberBuilder *SubscriberBuilder::addSource(SourceType source) {
-  sourceMask |= 1 << static_cast<uint8_t>(source);
-  return this;
+SubscriberBuilder SubscriberBuilder::allSources() {
+  auto _sourceMask = Subscriber::ALL_SOURCES;
+  return SubscriberBuilder(_sourceMask, eventMask, dataTypeMask,
+                           customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::excludeSource(SourceType source) {
-  sourceMask &= ~(1 << static_cast<uint8_t>(source));
-  return this;
+SubscriberBuilder SubscriberBuilder::setSource(SourceType source) {
+  auto _sourceMask = 1 << static_cast<uint8_t>(source);
+  return SubscriberBuilder(_sourceMask, eventMask, dataTypeMask,
+                           customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::allEvents() {
-  eventMask = Subscriber::ALL_EVENTS;
-  return this;
+SubscriberBuilder SubscriberBuilder::addSource(SourceType source) {
+  auto _sourceMask = sourceMask | 1 << static_cast<uint8_t>(source);
+  return SubscriberBuilder(_sourceMask, eventMask, dataTypeMask,
+                           customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::addEvent(EventType event) {
-  eventMask |= 1 << static_cast<uint8_t>(event);
-  return this;
+SubscriberBuilder SubscriberBuilder::excludeSource(SourceType source) {
+  auto _sourceMask = sourceMask & ~(1 << static_cast<uint8_t>(source));
+  return SubscriberBuilder(_sourceMask, eventMask, dataTypeMask,
+                           customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::excludeEvent(EventType event) {
-  eventMask &= ~(1 << static_cast<uint8_t>(event));
-  return this;
+SubscriberBuilder SubscriberBuilder::allEvents() {
+  auto _eventMask = Subscriber::ALL_EVENTS;
+  return SubscriberBuilder(sourceMask, _eventMask, dataTypeMask,
+                           customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::allDataTypes() {
-  dataTypeMask = Subscriber::ALL_DATA;
-  return this;
+SubscriberBuilder SubscriberBuilder::setEvent(EventType event) {
+  auto _eventMask = 1 << static_cast<uint8_t>(event);
+  return SubscriberBuilder(sourceMask, _eventMask, dataTypeMask,
+                           customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::setDataType(DataType dataType) {
-  dataTypeMask = static_cast<uint8_t>(dataType);
-  return this;
+SubscriberBuilder SubscriberBuilder::addEvent(EventType event) {
+  auto _eventMask = eventMask | 1 << static_cast<uint8_t>(event);
+  return SubscriberBuilder(sourceMask, _eventMask, dataTypeMask,
+                           customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::allCustomFields() {
-  customFieldsMask = Subscriber::ALL_CUSTOM_FIELDS;
-  return this;
+SubscriberBuilder SubscriberBuilder::excludeEvent(EventType event) {
+  auto _eventMask = eventMask & ~(1 << static_cast<uint8_t>(event));
+  return SubscriberBuilder(sourceMask, _eventMask, dataTypeMask,
+                           customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::addCustomFieldMask(uint8_t mask) {
+SubscriberBuilder SubscriberBuilder::allDataTypes() {
+  auto _dataTypeMask = Subscriber::ALL_DATA;
+  return SubscriberBuilder(sourceMask, eventMask, _dataTypeMask,
+                           customFieldsMask, hashedNameMask);
+}
+
+SubscriberBuilder SubscriberBuilder::setDataType(DataType dataType) {
+  auto _dataTypeMask = static_cast<uint8_t>(dataType);
+  return SubscriberBuilder(sourceMask, eventMask, _dataTypeMask,
+                           customFieldsMask, hashedNameMask);
+}
+
+SubscriberBuilder SubscriberBuilder::allCustomFields() {
+  auto _customFieldsMask = Subscriber::ALL_CUSTOM_FIELDS;
+  return SubscriberBuilder(sourceMask, eventMask, dataTypeMask,
+                           _customFieldsMask, hashedNameMask);
+}
+
+SubscriberBuilder SubscriberBuilder::setCustomFieldMask(uint8_t mask) {
+  int masks = 0;
+  auto _customFieldsMask = masks | (mask << 8);
+  return SubscriberBuilder(sourceMask, eventMask, dataTypeMask,
+                           _customFieldsMask, hashedNameMask);
+}
+
+SubscriberBuilder SubscriberBuilder::addCustomFieldMask(uint8_t mask) {
   int masks = customFieldsMask & 0xFF00;
-  customFieldsMask = masks | (mask << 8);
-  return this;
+  auto _customFieldsMask = masks | (mask << 8);
+  return SubscriberBuilder(sourceMask, eventMask, dataTypeMask,
+                           _customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::excludeCustomFieldMask(uint8_t mask) {
+SubscriberBuilder SubscriberBuilder::excludeCustomFieldMask(uint8_t mask) {
   int masks = customFieldsMask & 0xFF00;
-  customFieldsMask = masks & ~(mask << 8);
-  return this;
+  auto _customFieldsMask = masks & ~(mask << 8);
+  return SubscriberBuilder(sourceMask, eventMask, dataTypeMask,
+                           _customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::setExactCustomField(uint8_t exact) {
-  customFieldsMask = exact;
-  return this;
+SubscriberBuilder SubscriberBuilder::setExactCustomField(uint8_t exact) {
+  auto _customFieldsMask = exact;
+  return SubscriberBuilder(sourceMask, eventMask, dataTypeMask,
+                           _customFieldsMask, hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::allHashedNames() {
-  hashedNameMask = Subscriber::ALL_HASHES;
-  return this;
+SubscriberBuilder SubscriberBuilder::allHashedNames() {
+  auto _hashedNameMask = Subscriber::ALL_HASHES;
+  return SubscriberBuilder(sourceMask, eventMask, dataTypeMask,
+                           customFieldsMask, _hashedNameMask);
 }
 
-SubscriberBuilder *SubscriberBuilder::setHashedName(uint32_t hash) {
-  hashedNameMask = hash;
-  return this;
+SubscriberBuilder SubscriberBuilder::setHashedName(uint32_t hash) {
+  auto _hashedNameMask = hash;
+  return SubscriberBuilder(sourceMask, eventMask, dataTypeMask,
+                           customFieldsMask, _hashedNameMask);
 }
 
 std::shared_ptr<Subscriber> SubscriberBuilder::build() {
   if (sourceMask == 0) return std::shared_ptr<Subscriber>(nullptr);
   if (eventMask == 0) return std::shared_ptr<Subscriber>(nullptr);
   return std::make_shared<Subscriber>(sourceMask, eventMask, dataTypeMask,
-                                      customFieldsMask, hashedNameMask,
-                                      callBack);
-}
-
-Subscriber Subscriber::withCallBack(SubscriberCallBack newCallBack) {
-  return Subscriber(sourceMask, eventMask, dataTypeMask, customFieldsMask,
-                    hashedNameMask, newCallBack);
+                                      customFieldsMask, hashedNameMask);
 }
 
 bool Subscriber::matches(const Event &event) {
+  // std::cout << event << "\n" << *this << "\n\n";
   if (((1 << static_cast<uint8_t>(event.sourceType)) & sourceMask) == 0)
     return false;
   if (((1 << static_cast<uint8_t>(event.eventType)) & eventMask) == 0)
@@ -132,10 +170,8 @@ bool Subscriber::matches(const Event &event) {
   } else {
     if ((event.customFields & (customFieldsMask >> 8)) == 0) return false;
   }
-  std::cout << "Field matched\n";
   if ((hashedNameMask != 0) && (event.hashedName != hashedNameMask))
     return false;
-  std::cout << "Hash matched, all matched\n";
   return true;
 }
 
@@ -144,38 +180,38 @@ EventBuilder EventBuilder::source(SourceType source) {
   result._source = source;
   return result;
 }
-EventBuilder *EventBuilder::event(EventType event) {
-  _event = event;
-  return this;
+EventBuilder EventBuilder::event(EventType event) {
+  auto _event = event;
+  return EventBuilder(_source, _event, _dataType, _field, _hash);
 }
-EventBuilder *EventBuilder::data(DataType data) {
-  _dataType = data;
-  return this;
+EventBuilder EventBuilder::data(DataType data) {
+  auto _dataType = data;
+  return EventBuilder(_source, _event, _dataType, _field, _hash);
 }
-EventBuilder *EventBuilder::customField(uint8_t field) {
-  _field = field;
-  return this;
+EventBuilder EventBuilder::customField(uint8_t field) {
+  auto _field = field;
+  return EventBuilder(_source, _event, _dataType, _field, _hash);
 }
-EventBuilder *EventBuilder::hash(std::string name) {
-  uint32_t hashValue = hasher(name);
+EventBuilder EventBuilder::hash(std::string name) {
+  uint32_t hashValue = static_cast<uint32_t>(hasher(name));
   // We use hash 0 for matching, hopefully this will be rare
   if (hashValue == 0) hashValue = 1;
   return hash(hashValue);
 }
-EventBuilder *EventBuilder::hash(const char *name) {
+EventBuilder EventBuilder::hash(const char *name) {
   return hash(std::string(name));
 }
-EventBuilder *EventBuilder::hash(uint32_t hash) {
-  _hash = hash;
-  return this;
+EventBuilder EventBuilder::hash(uint32_t hash) {
+  auto _hash = hash;
+  return EventBuilder(_source, _event, _dataType, _field, _hash);
 }
-std::unique_ptr<Event> EventBuilder::build(std::shared_ptr<void> data) {
-  if (_source == SourceType::UNDEFINED) return std::unique_ptr<Event>(nullptr);
-  if (_event == EventType::UNDEFINED) return std::unique_ptr<Event>(nullptr);
-  if (_dataType == DataType::UNDEFINED) return std::unique_ptr<Event>(nullptr);
-  if (_hash == 0) return std::unique_ptr<Event>(nullptr);
-  auto ptr = std::unique_ptr<Event>(
-      new Event(_source, _event, _dataType, _field, _hash, data));
+std::shared_ptr<Event> EventBuilder::build(std::shared_ptr<void> data) {
+  if (_source == SourceType::UNDEFINED) return std::shared_ptr<Event>(nullptr);
+  if (_event == EventType::UNDEFINED) return std::shared_ptr<Event>(nullptr);
+  if (_dataType == DataType::UNDEFINED) return std::shared_ptr<Event>(nullptr);
+  if (_hash == 0) return std::shared_ptr<Event>(nullptr);
+  auto ptr =
+      std::make_shared<Event>(_source, _event, _dataType, _field, _hash, data);
   return ptr;
 }
 
@@ -189,17 +225,16 @@ Bus *Bus::get() {
   }
   return instance;
 }
-void Bus::publish(const Event &event) {
-  int eventType = static_cast<int>(event.eventType);
-  std::cout << "Publish event " << event << "\n";
+void Bus::publish(const std::shared_ptr<const Event> &event) {
+  int eventType = static_cast<int>(event->eventType);
+  auto resolvedEvent = *event;
+  std::cout << "Publish event " << resolvedEvent << "\n";
   auto it = subscribers[eventType].begin();
   while (it != subscribers[eventType].end()) {
     auto sub = *it;
-    std::cout << "Checking subscriber\n";
     auto tryResolve = sub.lock();
     if (tryResolve) {
-      std::cout << "Subscriber resolved " << *tryResolve << "\n";
-      if (tryResolve->matches(event)) tryResolve->callBack(event);
+      if (tryResolve->matches(resolvedEvent)) tryResolve->inbox.push(event);
       ++it;
     } else {
       it = subscribers[eventType].erase(it);
@@ -211,7 +246,6 @@ void Bus::subscribe(const std::shared_ptr<Subscriber> &subscriber) {
   std::cout << *subscriber << std::endl;
   for (int i = 0; i < 8; i++) {
     if (((1 << i) & mask) != 0) {
-      std::cout << "Adding to " << i << "\n";
       subscribers[i].push_back(std::weak_ptr<Subscriber>(subscriber));
     }
   }
