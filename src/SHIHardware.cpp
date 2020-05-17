@@ -66,8 +66,14 @@ void Hardware::logError(const std::string &name, const char *func,
 }
 
 void Hardware::addSensorGroup(std::shared_ptr<SensorGroup> sensorGroup) {
-  sensorGroup->setParent(this);
-  sensors.push_back(sensorGroup);
+  if ("default" == sensorGroup->getName()) {
+    for (auto &&sensor : *sensorGroup->getSensors()) {
+      defaultGroup->addSensor(sensor);
+    }
+  } else {
+    sensorGroup->setParent(this);
+    sensors.push_back(sensorGroup);
+  }
 }
 
 void Hardware::addSensor(std::shared_ptr<Sensor> sensor) {

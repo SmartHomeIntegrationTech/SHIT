@@ -6,28 +6,23 @@
 
 // WARNING, this is an automatically generated file!
 // Don't change anything in here.
-// Last update 2020-03-25
+// Last update 2020-05-01
 
-# include <iostream>
-# include <string>
+#include <iostream>
+#include <string>
 
-
-# include "SHISensor.h"
+#include "SHISensor.h"
 // Configuration implementation for class SHI::SensorGroupConfiguration
 
-namespace {
-    
-}  // namespace
+namespace {}  // namespace
 
-SHI::SensorGroupConfiguration::SensorGroupConfiguration(const JsonObject &obj):
-      name(obj["name"] | "default")
-  {}
+SHI::SensorGroupConfiguration::SensorGroupConfiguration(const JsonObject &obj)
+    : name(obj["name"] | "default") {}
 
 void SHI::SensorGroupConfiguration::fillData(JsonObject &doc) const {
-    doc["name"] = name;
+  doc["name"] = name;
 }
 
 int SHI::SensorGroupConfiguration::getExpectedCapacity() const {
   return JSON_OBJECT_SIZE(1);
 }
-

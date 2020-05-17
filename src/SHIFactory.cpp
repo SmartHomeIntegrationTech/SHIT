@@ -25,57 +25,105 @@ using SHI::Sensor;
 using SHI::SensorGroup;
 
 void ConfigurationVisitor::enterVisit(Sensor *sensor) {
+  auto ptr = std::make_shared<Record>();
   auto config = sensor->getConfig();
-  if (config != nullptr) {
-    sensors.emplace_back(std::pair<const std::string, const Configuration *>{
-        sensor->getName(), config});
-  }
+  auto sensorConfig = ptr->doc.createNestedObject(sensor->getName());
+  if (config != nullptr) config->fillData(sensorConfig);
+  currentNode->sensors.push_back(ptr);
 }
 void ConfigurationVisitor::leaveVisit(Sensor *sensor) {}
-void ConfigurationVisitor::enterVisit(SensorGroup *channel) {
-  auto config = channel->getConfig();
-  if (config != nullptr) {
-    sensors.emplace_back(std::pair<std::string, const Configuration *>{
-        channel->getName(), config});
-  }
+
+void ConfigurationVisitor::enterVisit(SensorGroup *group) {
+  auto ptr = std::make_shared<Record>();
+  auto config = group->getConfig();
+  auto sensorConfig = ptr->doc.createNestedObject("sensorGroup");
+  if (config != nullptr) config->fillData(sensorConfig);
+
+  currentNode->groups.push_back(ptr);
+  stack.push(currentNode);
+  currentNode = ptr;
 }
-void ConfigurationVisitor::leaveVisit(SensorGroup *channel) {}
+void ConfigurationVisitor::leaveVisit(SensorGroup *channel) {
+  currentNode = stack.top();
+  stack.pop();
+}
+
 void ConfigurationVisitor::visit(Communicator *communicator) {
+  auto ptr = std::make_shared<Record>();
   auto config = communicator->getConfig();
-  if (config != nullptr) {
-    sensors.emplace_back(std::pair<std::string, const Configuration *>{
-        communicator->getName(), config});
-  }
+  auto sensorConfig = ptr->doc.createNestedObject(communicator->getName());
+  if (config != nullptr) config->fillData(sensorConfig);
+  currentNode->comms.push_back(ptr);
 }
-void ConfigurationVisitor::enterVisit(Hardware *hardware) {}
-void ConfigurationVisitor::leaveVisit(Hardware *hardware) {
-  auto root = doc.as<JsonObject>();
-  auto hw = root.createNestedObject("hw");
-  hardware->getConfig()->fillData(hw);
+void ConfigurationVisitor::enterVisit(Hardware *hardware) {
+  auto ptr = std::make_shared<Record>();
+  currentNode = ptr;
+  auto hwNode = currentNode->doc.createNestedObject("hw");
+  auto config = hardware->getConfig();
+  if (config != nullptr) config->fillData(hwNode);
 }
+void ConfigurationVisitor::leaveVisit(Hardware *hardware) {}
 void ConfigurationVisitor::visit(MeasurementMetaData *data) {}
+
+JsonObject ConfigurationVisitor::Record::buildTree() {
+  for (auto kv : doc.as<JsonObject>()) {
+    auto nodeName = kv.key();
+    auto rootNode = kv.value();
+    if (comms.size() != 0) {
+      auto commsArray = rootNode.createNestedArray("$comms");
+      for (auto &&commNode : comms) {
+        commsArray.add(commNode->buildTree());
+      }
+    }
+    if (groups.size() != 0) {
+      auto groupsArray = rootNode.createNestedArray("$groups");
+      for (auto &&groupNode : groups) {
+        groupsArray.add(groupNode->buildTree());
+      }
+    }
+    if (sensors.size() != 0) {
+      auto sensorsArray = rootNode.createNestedArray("$sensors");
+      for (auto &&sensorNode : sensors) {
+        sensorsArray.add(sensorNode->buildTree());
+      }
+    }
+  }
+  return doc.as<JsonObject>();
+}
 
 Factory *Factory::get() {
   if (instance == nullptr) instance = new Factory();
   return instance;
 }
 
-FactoryErrors Factory::construct(const std::string &json) {
+SHI::FactoryErrors Factory::getError(SHI::FactoryResult result) {
+  return std::get<1>(result);
+}
+
+template <typename T>
+T *Factory::getInstance(SHI::FactoryResult result) {
+  return static_cast<T *>(std::get<0>(result));
+}
+
+SHI::FactoryResult Factory::construct(const std::string &json) {
   DeserializationError err = deserializeJson(doc, json);
   if (err) {
-    return FactoryErrors::FailureToParseJson;
+    return errorToResult(FactoryErrors::FailureToParseJson);
   }
   JsonObject obj = doc.as<JsonObject>();
-  if (!obj.containsKey("hw")) return FactoryErrors::NoHWKeyFound;
+  if (!obj.containsKey("hw")) return errorToResult(FactoryErrors::NoHWKeyFound);
   auto hwObj = obj["hw"];
-  if (!hwObj.is<JsonObject>()) return FactoryErrors::InvalidHWKeyFound;
+  if (!hwObj.is<JsonObject>())
+    return errorToResult(FactoryErrors::InvalidHWKeyFound);
   auto factoryFind = factories.find("hw");
   if (factoryFind != factories.end()) {
-    auto facObj = factoryFind->second(hwObj);
-    hw = static_cast<Hardware *>(facObj);
-    return FactoryErrors::None;
+    auto factory = factoryFind->second;
+    FactoryResult result = factory(hwObj);
+    if (getError(result) == FactoryErrors::None)
+      hw = getInstance<Hardware>(result);
+    return result;
   }
-  return FactoryErrors::MissingRegistryForHW;
+  return errorToResult(FactoryErrors::MissingRegistryForHW);
 }
 
 bool Factory::registerFactory(const std::string &name,
@@ -86,73 +134,79 @@ bool Factory::registerFactory(const std::string &name,
 
 Factory *Factory::instance = nullptr;
 
-Hardware *Factory::defaultHardwareFactory(Hardware *hardware,
-                                          const JsonObject &obj) {
+SHI::FactoryResult Factory::callFactory(
+    const ArduinoJson::JsonObject &arguments, const std::string &className) {
+  if (factories.find(className) == factories.end())
+    return {nullptr, FactoryErrors::MissingRegistryForEntry};
+  auto factory = factories[className];
+  return factory(arguments);
+}
+
+SHI::FactoryResult Factory::defaultHardwareFactory(Hardware *hardware,
+                                                   const JsonObject &obj) {
   hw = hardware;
-  std::cout << __func__ << std::endl;
   JsonArray sensors = obj["$sensors"];
   for (JsonObject sensorObj : sensors) {
-    std::cout << __func__ << sensorObj << std::endl;
     for (auto kv : sensorObj) {
       std::string className = kv.key().c_str();
       JsonObject arguments = kv.value();
-      Sensor *rawSensor =
-          static_cast<Sensor *>(instance->factories[className](arguments));
-      hardware->addSensor(std::shared_ptr<Sensor>(rawSensor));
+      SHI::FactoryResult result = callFactory(arguments, className);
+      if (getError(result) != FactoryErrors::None) return errorToResult(result);
+      hardware->addSensor(std::shared_ptr<Sensor>(getInstance<Sensor>(result)));
     }
   }
   JsonArray sensorGroups = obj["$groups"];
   for (JsonObject sensorGroupObj : sensorGroups) {
-    std::cout << __func__ << sensorGroupObj << std::endl;
     for (auto kv : sensorGroupObj) {
       std::string className = kv.key().c_str();
       JsonObject arguments = kv.value();
-      SensorGroup *rawSensorGroup =
-          static_cast<SensorGroup *>(instance->factories[className](arguments));
-      hardware->addSensorGroup(std::shared_ptr<SensorGroup>(rawSensorGroup));
+      SHI::FactoryResult result = callFactory(arguments, className);
+      if (getError(result) != FactoryErrors::None) return errorToResult(result);
+      hardware->addSensorGroup(
+          std::shared_ptr<SensorGroup>(getInstance<SensorGroup>(result)));
     }
   }
   JsonArray comms = obj["$comms"];
   for (JsonObject commObj : comms) {
-    std::cout << __func__ << commObj << std::endl;
     for (auto kv : commObj) {
       std::string className = kv.key().c_str();
       JsonObject arguments = kv.value();
-      Communicator *rawSensor = static_cast<Communicator *>(
-          instance->factories[className](arguments));
-      hardware->addCommunicator(std::shared_ptr<Communicator>(rawSensor));
+      auto result = callFactory(arguments, className);
+      if (getError(result) != FactoryErrors::None) return errorToResult(result);
+      hardware->addCommunicator(
+          std::shared_ptr<Communicator>(getInstance<Communicator>(result)));
     }
   }
-  return hardware;
+  return objToResult(hw);
 }
 
-Communicator *Factory::defaultCommunicatorFactory(Communicator *comm,
-                                                  const JsonObject &obj) {
-  std::cout << __func__ << std::endl;
-  return comm;
+SHI::FactoryResult Factory::defaultCommunicatorFactory(Communicator *comm,
+                                                       const JsonObject &obj) {
+  return objToResult(comm);
 }
 
-SensorGroup *Factory::defaultSensorGroupFactory(const JsonObject &obj) {
+SHI::FactoryResult Factory::defaultSensorGroupFactory(const JsonObject &obj) {
   std::string name = obj["name"];
-  std::cout << __func__ << name << std::endl;
   auto group = new SensorGroup(name.c_str());
   JsonArray sensors = obj["$sensors"];
   for (JsonObject sensorObj : sensors) {
-    std::cout << __func__ << sensorObj << std::endl;
     for (auto kv : sensorObj) {
       std::string className = kv.key().c_str();
       JsonObject arguments = kv.value();
-      Sensor *rawSensor =
-          static_cast<Sensor *>(instance->factories[className](arguments));
-      group->addSensor(std::shared_ptr<Sensor>(rawSensor));
+      auto result = callFactory(arguments, className);
+      if (getError(result) != FactoryErrors::None) {
+        delete group;
+        return errorToResult(result);
+      }
+      group->addSensor(std::shared_ptr<Sensor>(getInstance<Sensor>(result)));
     }
   }
-  return group;
+  return objToResult(group);
 }
 
-Sensor *Factory::defaultSensorFactory(Sensor *sensor, const JsonObject &obj) {
-  std::cout << __func__ << std::endl;
-  return sensor;
+SHI::FactoryResult Factory::defaultSensorFactory(Sensor *sensor,
+                                                 const JsonObject &obj) {
+  return objToResult(sensor);
 }
 
 std::string Configuration::toJson() const {
@@ -161,6 +215,13 @@ std::string Configuration::toJson() const {
   fillData(root);
   char output[2000];
   serializeJson(doc, output, sizeof(output));
+  return std::string(output);
+}
+
+std::string ConfigurationVisitor::toJson() const {
+  char output[2000];
+  auto node = currentNode->buildTree();
+  serializeJsonPretty(node, output, sizeof(output));
   return std::string(output);
 }
 

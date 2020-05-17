@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "ArduinoJson.h"
+#include "SHIEventBus.h"
 #include "SHIFactory.h"
 #include "SHIHardware.h"
 
@@ -99,6 +100,8 @@ class MeasurementMetaData : public SHIObject {
   Measurement measuredError();
   Configuration *getConfig() const override { return nullptr; }
   bool reconfigure(Configuration *newConfig) override { return false; }
+  EventBus::SubscriberBuilder getSubscriberBuilder();
+  EventBus::EventBuilder getEventBuilder();
 };
 
 class MeasurementBundle {

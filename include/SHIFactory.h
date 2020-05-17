@@ -12,7 +12,9 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <stack>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -31,7 +33,9 @@ enum class FactoryErrors {
   /// The type of the hw root element was incorrect
   InvalidHWKeyFound,
   /// There seems to be no hardware registered
-  MissingRegistryForHW
+  MissingRegistryForHW,
+  /// There is no entry for the requested hardware
+  MissingRegistryForEntry
 };
 
 class Configuration {
@@ -44,7 +48,8 @@ class Configuration {
   virtual int getExpectedCapacity() const = 0;
 };
 
-typedef std::function<SHI::SHIObject *(const JsonObject &obj)> factoryFunction;
+typedef std::tuple<SHIObject *, SHI::FactoryErrors> FactoryResult;
+typedef std::function<FactoryResult(const JsonObject &obj)> factoryFunction;
 
 class Factory {
  public:
@@ -56,15 +61,28 @@ class Factory {
     instance = nullptr;
   }
   bool registerFactory(const std::string &name, factoryFunction factory);
-  FactoryErrors construct(const std::string &json);
-
-  static SHI::Hardware *defaultHardwareFactory(SHI::Hardware *hardware,
-                                               const JsonObject &obj);
-  static SHI::Communicator *defaultCommunicatorFactory(SHI::Communicator *comm,
-                                                       const JsonObject &obj);
-  static SHI::SensorGroup *defaultSensorGroupFactory(const JsonObject &obj);
-  static SHI::Sensor *defaultSensorFactory(SHI::Sensor *hardware,
+  FactoryResult construct(const std::string &json);
+  FactoryResult defaultHardwareFactory(SHI::Hardware *hardware,
+                                       const JsonObject &obj);
+  FactoryResult defaultCommunicatorFactory(SHI::Communicator *comm,
                                            const JsonObject &obj);
+  FactoryResult defaultSensorGroupFactory(const JsonObject &obj);
+  FactoryResult defaultSensorFactory(SHI::Sensor *hardware,
+                                     const JsonObject &obj);
+  static SHI::FactoryErrors getError(FactoryResult result);
+  template <typename T>
+  static T *getInstance(FactoryResult result);
+  FactoryResult objToResult(SHIObject *obj) {
+    return std::tuple<SHI::SHIObject *, FactoryErrors>(obj,
+                                                       FactoryErrors::None);
+  }
+  FactoryResult errorToResult(FactoryErrors result) {
+    return std::tuple<SHI::SHIObject *, FactoryErrors>(nullptr, result);
+  }
+  FactoryResult errorToResult(FactoryResult result) {
+    return std::tuple<SHI::SHIObject *, FactoryErrors>(nullptr,
+                                                       getError(result));
+  }
 
  private:
   Factory() {}
@@ -72,12 +90,16 @@ class Factory {
   ~Factory() {}
   static Factory *instance;
   std::map<std::string, factoryFunction> factories;
-
+  std::tuple<SHIObject *, SHI::FactoryErrors> callFactory(
+      const ArduinoJson::JsonObject &arguments, const std::string &className);
   DynamicJsonDocument doc{5000};
 };
 
 class ConfigurationVisitor : public Visitor {
  public:
+  std::string toJson() const;
+
+ protected:
   void enterVisit(Sensor *sensor) override;
   void leaveVisit(Sensor *sensor) override;
   void enterVisit(SensorGroup *channel) override;
@@ -88,10 +110,15 @@ class ConfigurationVisitor : public Visitor {
   void visit(MeasurementMetaData *data) override;
 
  private:
-  std::vector<std::pair<const std::string, const Configuration *>> sensors;
-  std::vector<std::pair<const std::string, const Configuration *>> comms;
-  std::vector<std::pair<const std::string, const Configuration *>> groups;
-  DynamicJsonDocument doc{5000};
+  struct Record {
+    std::vector<std::shared_ptr<Record>> sensors;
+    std::vector<std::shared_ptr<Record>> comms;
+    std::vector<std::shared_ptr<Record>> groups;
+    DynamicJsonDocument doc{5000};
+    JsonObject buildTree();
+  };
+  std::stack<std::shared_ptr<Record>> stack;
+  std::shared_ptr<Record> currentNode;
 };
 
 }  // namespace SHI

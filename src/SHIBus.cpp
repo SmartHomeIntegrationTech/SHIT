@@ -6,12 +6,10 @@
 
 #include "SHIBus.h"
 
-using SHI::Print;
+int SHI::Print::getWriteError() { return writeError; }
+void SHI::Print::clearWriteError() { writeError = 0; }
 
-int Print::getWriteError() { return writeError; }
-void Print::clearWriteError() { writeError = 0; }
-
-size_t Print::write(const char str[]) {
+size_t SHI::Print::write(const char str[]) {
   if (str != nullptr) {
     size_t len = strlen(str);
     return write(str, len);
@@ -19,13 +17,13 @@ size_t Print::write(const char str[]) {
   return 0;
 }
 
-size_t Print::write(const char* buffer, size_t size) {
+size_t SHI::Print::write(const char* buffer, size_t size) {
   return write(reinterpret_cast<uint8_t*>(const_cast<char*>(buffer)), size);
 }
 
-size_t Print::write(char c) { return write(static_cast<uint8_t>(c)); }
+size_t SHI::Print::write(char c) { return write(static_cast<uint8_t>(c)); }
 
-size_t Print::printf(const char* format, ...) {
+size_t SHI::Print::printf(const char* format, ...) {
   va_list args;
   va_start(args, format);
   char buf[32];
@@ -49,7 +47,7 @@ size_t Print::printf(const char* format, ...) {
   // Becaue we added one in the beginning
   return written - 1;
 }
-size_t Print::printSigned(int64_t value, int base) {
+size_t SHI::Print::printSigned(int64_t value, int base) {
   if (value < 0) {
     return print('-') + printUnsigned(-value, base);
   }
@@ -68,7 +66,7 @@ std::string toString(int value) {
   } while (value != 0);
   return std::string(&result[pos], 20 - pos);
 }
-size_t Print::printUnsigned(uint64_t value, int base) {
+size_t SHI::Print::printUnsigned(uint64_t value, int base) {
   if (base <= 1) base = 10;
   uint8_t result[20 + 1];
   result[20] = 0;
@@ -85,17 +83,17 @@ size_t Print::printUnsigned(uint64_t value, int base) {
   return write(&result[pos], static_cast<size_t>(20 - pos));
 }
 
-size_t Print::print(const char value[]) { return write(value); }
-size_t Print::print(char value) { return write(value); }
+size_t SHI::Print::print(const char value[]) { return write(value); }
+size_t SHI::Print::print(char value) { return write(value); }
 
-size_t Print::print(double value, int precision) {
+size_t SHI::Print::print(double value, int precision) {
   if (precision == 2)  // This is the default, so be smarter here
     return printf("%0.2f", value);
   std::string format = std::string("%0.") + toString(precision) + "f";
   return printf(format.c_str(), value);
 }
 
-size_t Print::print(struct tm* timeinfo, const char* format) {
+size_t SHI::Print::print(struct tm* timeinfo, const char* format) {
   if (format == nullptr) {
     format = "%c";
   }
@@ -107,10 +105,12 @@ size_t Print::print(struct tm* timeinfo, const char* format) {
   return written;
 }
 
-size_t Print::println(const char value[]) { return print(value) + println(); }
+size_t SHI::Print::println(const char value[]) {
+  return print(value) + println();
+}
 
-size_t Print::println(char value) { return print(value) + println(); }
-size_t Print::println(void) { return print('\n'); }
-size_t Print::println(struct tm* timeinfo, const char* format) {
+size_t SHI::Print::println(char value) { return print(value) + println(); }
+size_t SHI::Print::println(void) { return print('\n'); }
+size_t SHI::Print::println(struct tm* timeinfo, const char* format) {
   return print(timeinfo, format) + println();
 }
