@@ -35,7 +35,9 @@ enum class FactoryErrors {
   /// There seems to be no hardware registered
   MissingRegistryForHW,
   /// There is no entry for the requested hardware
-  MissingRegistryForEntry
+  MissingRegistryForEntry,
+  /// When bootstrapping from a file-system, the file was not found
+  FailureToLoadFile
 };
 
 class Configuration {
@@ -83,6 +85,7 @@ class Factory {
     return std::tuple<SHI::SHIObject *, FactoryErrors>(nullptr,
                                                        getError(result));
   }
+  static const char *errorToString(FactoryErrors error);
 
  private:
   Factory() {}

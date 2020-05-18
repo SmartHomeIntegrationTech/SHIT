@@ -67,7 +67,6 @@ void ConfigurationVisitor::visit(MeasurementMetaData *data) {}
 
 JsonObject ConfigurationVisitor::Record::buildTree() {
   for (auto kv : doc.as<JsonObject>()) {
-    auto nodeName = kv.key();
     auto rootNode = kv.value();
     if (comms.size() != 0) {
       auto commsArray = rootNode.createNestedArray("$comms");
@@ -98,6 +97,17 @@ Factory *Factory::get() {
 
 SHI::FactoryErrors Factory::getError(SHI::FactoryResult result) {
   return std::get<1>(result);
+}
+
+const char *Factory::errorToString(SHI::FactoryErrors error) {
+  static const char *FACTORY_ERROR_NAMES[] = {"None",
+                                              "FailureToParseJson",
+                                              "NoHWKeyFound",
+                                              "InvalidHWKeyFound",
+                                              "MissingRegistryForHW",
+                                              "MissingRegistryForEntry",
+                                              "FailureToLoadFile"};
+  return FACTORY_ERROR_NAMES[static_cast<int>(error)];
 }
 
 template <typename T>
@@ -137,7 +147,7 @@ Factory *Factory::instance = nullptr;
 SHI::FactoryResult Factory::callFactory(
     const ArduinoJson::JsonObject &arguments, const std::string &className) {
   if (factories.find(className) == factories.end())
-    return {nullptr, FactoryErrors::MissingRegistryForEntry};
+    return errorToResult(FactoryErrors::MissingRegistryForEntry);
   auto factory = factories[className];
   return factory(arguments);
 }
