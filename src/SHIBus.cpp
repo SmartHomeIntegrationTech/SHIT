@@ -6,6 +6,8 @@
 
 #include "SHIBus.h"
 
+#include <cstdarg>
+
 int SHI::Print::getWriteError() { return writeError; }
 void SHI::Print::clearWriteError() { writeError = 0; }
 
